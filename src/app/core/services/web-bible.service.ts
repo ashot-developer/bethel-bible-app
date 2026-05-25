@@ -27,10 +27,29 @@ function stripMarkup(text: string): string {
 }
 
 function armenianVariants(q: string): string[] {
+  const VO   = 'ո';
+  const YIWN = 'ւ';
+  const U    = VO + YIWN;   // ու
+
   const s = new Set([q]);
-  s.add(q.replace(/վ/g, 'ւ').replace(/Վ/g, 'Ւ').replace(/հ/g, 'յ').replace(/Հ/g, 'Յ'));
-  s.add(q.replace(/ւ/g, 'վ').replace(/Ւ/g, 'Վ').replace(/յ/g, 'հ').replace(/Յ/g, 'Հ'));
-  return [...s];
+
+  // Modern Eastern Armenian → Classical
+  s.add(q
+    .replace(/վ/g, 'ւ').replace(/Վ/g, 'Ւ')
+    .replace(/հ/g, 'յ').replace(/Հ/g, 'Յ')
+    .replace(/և/g, 'եւ')
+    .replace(new RegExp(U, 'g'), VO)
+  );
+
+  // Classical → Modern Eastern Armenian
+  s.add(q
+    .replace(/ւ/g, 'վ').replace(/Ւ/g, 'Վ')
+    .replace(/յ/g, 'հ').replace(/Յ/g, 'Հ')
+    .replace(/եւ/g, 'և')
+    .replace(new RegExp(`${VO}(?!${YIWN})`, 'g'), U)
+  );
+
+  return [...s].filter(v => v.length > 0);
 }
 
 @Injectable()

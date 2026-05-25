@@ -6,7 +6,8 @@ import type {
   BibleTranslation,
   Bookmark,
   Member,
-  ChurchEvent
+  ChurchEvent,
+  UpdateStatus
 } from '../electron-utils/ipc-channels';
 
 const invoke = (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args);
@@ -74,6 +75,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invoke(IPC_CHANNELS.THEME.GET),
     set: (theme: string): Promise<void> =>
       invoke(IPC_CHANNELS.THEME.SET, theme),
+  },
+
+  update: {
+    getStatus: (): Promise<UpdateStatus> =>
+      invoke(IPC_CHANNELS.UPDATE.GET_STATUS),
+    check: (): Promise<UpdateStatus> =>
+      invoke(IPC_CHANNELS.UPDATE.CHECK),
+    openDownload: (url: string): Promise<void> =>
+      invoke(IPC_CHANNELS.UPDATE.OPEN_DOWNLOAD, url),
   },
 
   on: (channel: string, callback: (...args: unknown[]) => void) => {

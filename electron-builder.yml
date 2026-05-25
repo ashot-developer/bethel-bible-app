@@ -53,4 +53,8 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
 
-publish: null
+publish:
+  provider: github
+  owner: ashot-developer
+  repo: bethel-bible-app
+  releaseType: release

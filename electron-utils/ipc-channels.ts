@@ -35,8 +35,24 @@ export const IPC_CHANNELS = {
   THEME: {
     SET: 'theme:set',
     GET: 'theme:get',
+  },
+  UPDATE: {
+    CHECK: 'update:check',
+    GET_STATUS: 'update:getStatus',
+    OPEN_DOWNLOAD: 'update:openDownload',
+    STATUS: 'update:status',
   }
 } as const;
+
+export interface UpdateStatus {
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'error';
+  currentVersion?: string;
+  latestVersion?: string;
+  releaseUrl?: string;
+  downloadUrl?: string;
+  releaseNotes?: string;
+  error?: string;
+}
 
 export interface BibleBook {
   book_number: number;

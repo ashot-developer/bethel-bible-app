@@ -58,6 +58,10 @@ html, body {
 }
 
 // ── PrimeNG Overrides ─────────────────────────────────────────────────────
+.p-dropdown:not(.p-disabled).p-focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .p-button {
   &.p-button-primary {
     background: var(--bethel-primary);

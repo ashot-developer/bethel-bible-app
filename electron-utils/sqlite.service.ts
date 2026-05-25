@@ -27,9 +27,9 @@ function getAppDbPath(): string {
 }
 
 const TRANSLATIONS: Record<string, { file: string; name: string; language: string; description: string; hasStrongNumbers: boolean; rightToLeft: boolean }> = {
-  'KJV': { file: 'KJV.SQLite3', name: 'King James Version', language: 'en', description: 'King James Version (1850 revision)', hasStrongNumbers: true, rightToLeft: false },
-  'Ararat': { file: 'Ararat.SQLite3', name: 'Արարատյան Թարգմանություն', language: 'hy', description: 'Eastern Armenian Bible - ARARAT, 1910', hasStrongNumbers: false, rightToLeft: false },
   'WAB':    { file: 'WAB.SQLite3',    name: 'Բեյրութի թարգմանություն', language: 'hy-west', description: 'Western Armenian Bible, 1994', hasStrongNumbers: false, rightToLeft: false },
+  'Ararat': { file: 'Ararat.SQLite3', name: 'Արարատյան Թարգմանություն', language: 'hy', description: 'Eastern Armenian Bible - ARARAT, 1910', hasStrongNumbers: false, rightToLeft: false },
+  'KJV': { file: 'KJV.SQLite3', name: 'King James Version', language: 'en', description: 'King James Version (1850 revision)', hasStrongNumbers: true, rightToLeft: false },
   'NRAB': { file: 'NRAB.SQLite3', name: 'Нов. Рус.-Арм. Библия', language: 'hy-ru', description: 'New Russian-Armenian Bible 2018', hasStrongNumbers: false, rightToLeft: false },
   'RST77': { file: 'RST77.SQLite3', name: 'Синодальный перевод', language: 'ru', description: 'Russian Synodal Translation 1977', hasStrongNumbers: false, rightToLeft: false },
   'RSTI':  { file: 'RSTI.SQLite3',  name: 'Синодальный (с индексами)', language: 'ru', description: 'Russian Synodal with indices', hasStrongNumbers: false, rightToLeft: false },
@@ -185,26 +185,32 @@ export function getVerse(translationId: string, bookNumber: number, chapter: num
   return { ...row, text: stripVerseMarkup(row.text), book_name: bookName };
 }
 
-// Modern Eastern Armenian ↔ Classical Armenian (Ararat 1910) character mapping.
-// Users type modern letters; the old Bible uses classical spelling.
+// Modern Eastern Armenian ↔ Classical Armenian character mapping.
+// Users type modern Eastern Armenian; old translations use classical spelling.
 function armenianVariants(query: string): string[] {
+  const VO   = 'ո';     // ո
+  const YIWN = 'ւ';     // ւ
+  const U    = VO + YIWN;   // ու  (digraph)
+
   const variants = new Set<string>([query]);
 
-  // modern → classical
-  const classical = query
-    .replace(/վ/g, 'ւ').replace(/Վ/g, 'Ւ')   // vev → yiwn  (v sound)
-    .replace(/հ/g, 'յ').replace(/Հ/g, 'Յ')   // ho  → yi    (word-initial h/y)
-    .replace(/ու/g, 'ու')                      // same — keep explicitly
-    .replace(/փ/g, 'փ').replace(/ք/g, 'ք');   // same — keep explicitly
-  variants.add(classical);
+  // Modern Eastern Armenian → Classical
+  variants.add(query
+    .replace(/վ/g, 'ւ').replace(/Վ/g, 'Ւ')  // վ→ւ, Վ→Ւ
+    .replace(/հ/g, 'յ').replace(/Հ/g, 'Յ')  // հ→յ, Հ→Յ
+    .replace(/և/g, 'եւ')                          // և→եւ
+    .replace(new RegExp(U, 'g'), VO)                             // ու→ո
+  );
 
-  // classical → modern (so classical input also works)
-  const modern = query
-    .replace(/ւ/g, 'վ').replace(/Ւ/g, 'Վ')
-    .replace(/յ/g, 'հ').replace(/Յ/g, 'Հ');
-  variants.add(modern);
+  // Classical → Modern Eastern Armenian
+  variants.add(query
+    .replace(/ւ/g, 'վ').replace(/Ւ/g, 'Վ')  // ւ→վ, Ւ→Վ
+    .replace(/յ/g, 'հ').replace(/Յ/g, 'Հ')  // յ→հ, Յ→Հ
+    .replace(/եւ/g, 'և')                          // եւ→և
+    .replace(new RegExp(`${VO}(?!${YIWN})`, 'g'), U)            // ո→ու (when not already ու)
+  );
 
-  return [...variants];
+  return [...variants].filter(v => v.length > 0);
 }
 
 const ARMENIAN_TRANSLATIONS = new Set(['Ararat', 'NRAB', 'WAB']);

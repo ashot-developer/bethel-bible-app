@@ -3,6 +3,16 @@ import type { BibleBook, BibleTranslation, BibleVerse, Bookmark } from '../model
 import type { Member } from '../models/member.models';
 import type { ChurchEvent } from '../models/event.models';
 
+export interface UpdateStatus {
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'error';
+  currentVersion?: string;
+  latestVersion?: string;
+  releaseUrl?: string;
+  downloadUrl?: string;
+  releaseNotes?: string;
+  error?: string;
+}
+
 interface ElectronAPI {
   bible: {
     getTranslations(): Promise<BibleTranslation[]>;
@@ -38,6 +48,11 @@ interface ElectronAPI {
   theme: {
     get(): Promise<string>;
     set(theme: string): Promise<void>;
+  };
+  update: {
+    getStatus(): Promise<UpdateStatus>;
+    check(): Promise<UpdateStatus>;
+    openDownload(url: string): Promise<void>;
   };
   on(channel: string, callback: (...args: unknown[]) => void): void;
   off(channel: string, callback: (...args: unknown[]) => void): void;
@@ -77,6 +92,10 @@ export class ElectronService {
 
   get themeApi() {
     return this.api?.theme;
+  }
+
+  get updateApi() {
+    return this.api?.update;
   }
 
   on(channel: string, callback: (...args: unknown[]) => void): void {

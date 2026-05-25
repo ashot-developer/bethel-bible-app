@@ -1,7 +1,6 @@
-import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import * as path from 'path';
-import { autoUpdater } from 'electron-updater';
-import { registerIpcHandlers } from '../electron-utils/ipc-handlers';
+import { registerIpcHandlers, performAutoUpdateCheck } from '../electron-utils/ipc-handlers';
 
 const isDev = !app.isPackaged && process.env['NODE_ENV'] !== 'production';
 
@@ -36,36 +35,24 @@ function createWindow(): void {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
+    // Auto-check for updates 10 s after window is visible
+    setTimeout(() => {
+      if (mainWindow) performAutoUpdateCheck(mainWindow);
+    }, 10000);
   });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
-  // Remove default menu in production
   if (!isDev) {
     Menu.setApplicationMenu(null);
   }
 }
 
-function setupAutoUpdater(): void {
-  if (isDev) return;
-
-  autoUpdater.checkForUpdatesAndNotify();
-
-  autoUpdater.on('update-available', () => {
-    mainWindow?.webContents.send('update-available');
-  });
-
-  autoUpdater.on('update-downloaded', () => {
-    mainWindow?.webContents.send('update-downloaded');
-  });
-}
-
 app.whenReady().then(() => {
   registerIpcHandlers();
   createWindow();
-  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
