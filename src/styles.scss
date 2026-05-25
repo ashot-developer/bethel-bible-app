@@ -1,0 +1,303 @@
+// ── Prevent PrimeFlex from downloading its bundled Inter variable font ────
+// The WOFF2 file bundled with PrimeFlex fails OTS validation in Electron.
+// Declaring it as local() tells the browser to use system fonts instead.
+@font-face {
+  font-family: 'Inter var';
+  src: local('Inter'), local('Helvetica Neue'), local('Arial');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+// ── Bethel Church Brand Theme ─────────────────────────────────────────────
+:root {
+  --bethel-primary: #F5A623;
+  --bethel-primary-dark: #e0941a;
+  --bethel-accent: #D0021B;
+  --bethel-text: #333333;
+  --bethel-bg: #f8f9fa;
+  --bethel-sidebar-bg: #1a1a2e;
+  --bethel-sidebar-text: #e8e8e8;
+  --bethel-sidebar-active: #F5A623;
+
+  // Override PrimeNG lara-light CSS variables
+  --primary-color: #F5A623;
+  --primary-color-text: #ffffff;
+  --highlight-bg: #fff3e0;
+  --highlight-text-color: #e07b00;
+  --focus-ring: 0 0 0 0.2rem rgba(245, 166, 35, 0.25);
+}
+
+// ── Global Reset ──────────────────────────────────────────────────────────
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: var(--bethel-bg);
+  color: var(--bethel-text);
+}
+
+// ── Scrollbar ─────────────────────────────────────────────────────────────
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.35);
+}
+
+// ── PrimeNG Overrides ─────────────────────────────────────────────────────
+.p-button {
+  &.p-button-primary {
+    background: var(--bethel-primary);
+    border-color: var(--bethel-primary);
+    color: #fff;
+    &:hover {
+      background: var(--bethel-primary-dark);
+      border-color: var(--bethel-primary-dark);
+    }
+  }
+  &.p-button-danger {
+    background: var(--bethel-accent);
+    border-color: var(--bethel-accent);
+  }
+}
+
+.p-highlight {
+  background: var(--highlight-bg) !important;
+  color: var(--highlight-text-color) !important;
+}
+
+.p-panelmenu .p-panelmenu-header .p-panelmenu-header-action:focus {
+  box-shadow: var(--focus-ring);
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────────────
+.app-toolbar {
+  background: var(--surface-card, #ffffff);
+  border-bottom: 1px solid var(--surface-border, #e9ecef);
+  padding: 0 0.75rem 0 80px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    -webkit-app-region: no-drag;
+  }
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Cards ─────────────────────────────────────────────────────────────────
+.stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border: 1px solid #eee;
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+
+    &.primary { background: rgba(245,166,35,0.15); color: var(--bethel-primary); }
+    &.accent   { background: rgba(208,2,27,0.1);   color: var(--bethel-accent); }
+    &.blue     { background: rgba(59,130,246,0.1);  color: #3b82f6; }
+    &.green    { background: rgba(34,197,94,0.1);   color: #22c55e; }
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--bethel-text);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+  }
+}
+
+// ── Bible Reader ──────────────────────────────────────────────────────────
+.bible-layout {
+  display: flex;
+  height: 100%;
+  gap: 0;
+  overflow: hidden;
+
+  .bible-panel {
+    background: #fff;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &.books-panel  { width: 200px; min-width: 160px; }
+    &.chapters-panel { width: 120px; min-width: 100px; }
+    &.verses-panel { flex: 1; min-width: 0; }
+
+    .panel-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #eee;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #fafafa;
+    }
+
+    .panel-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .panel-item {
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:hover { background: #f8f8f8; }
+      &.active {
+        background: rgba(245,166,35,0.12);
+        color: #e07b00;
+        font-weight: 600;
+        border-left: 3px solid var(--bethel-primary);
+      }
+    }
+  }
+}
+
+.verse-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f5f5f5;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #fafafa;
+    .verse-actions { opacity: 1; }
+  }
+
+  .verse-num {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--bethel-primary);
+    min-width: 28px;
+    padding-top: 2px;
+  }
+
+  .verse-text {
+    flex: 1;
+    line-height: 1.7;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .verse-actions {
+    opacity: 0;
+    display: flex;
+    gap: 0.25rem;
+    transition: opacity 0.15s;
+    padding-top: 2px;
+  }
+
+  &.bookmarked {
+    background: rgba(245,166,35,0.05);
+    .verse-num { color: var(--bethel-accent); }
+  }
+}
+
+// ── Dark mode ─────────────────────────────────────────────────────────────
+body.dark-mode {
+  // Brand vars
+  --bethel-bg: #121212;
+  --bethel-text: #e8e8e8;
+
+  // Override PrimeNG surface variables used throughout the app
+  --surface-ground:  #111111;
+  --surface-section: #1a1a1a;
+  --surface-card:    #1c1c1c;
+  --surface-overlay: #242424;
+  --surface-border:  #2e2e2e;
+  --surface-hover:   #282828;
+  --text-color:           #e2e2e2;
+  --text-color-secondary: #9a9a9a;
+
+  background-color: #111111;
+  color: #e2e2e2;
+
+  // Toolbar
+  .app-toolbar {
+    background: #1c1c1c;
+    border-bottom-color: #2e2e2e;
+  }
+
+  // PrimeNG component backgrounds
+  .p-dropdown,
+  .p-inputtext {
+    background: #242424;
+    border-color: #3a3a3a;
+    color: #e2e2e2;
+  }
+  .p-dropdown-panel {
+    background: #242424;
+    border-color: #3a3a3a;
+    .p-dropdown-item { color: #e2e2e2; }
+    .p-dropdown-item:hover { background: #2e2e2e; }
+    .p-dropdown-item.p-highlight { background: rgba(245,166,35,0.2); color: var(--bethel-primary); }
+  }
+  .p-dialog {
+    background: #1c1c1c;
+    border-color: #2e2e2e;
+    .p-dialog-header { background: #1c1c1c; color: #e2e2e2; border-bottom-color: #2e2e2e; }
+    .p-dialog-content { background: #1c1c1c; color: #e2e2e2; }
+    .p-dialog-footer { background: #1c1c1c; border-top-color: #2e2e2e; }
+  }
+  .p-toast .p-toast-message { background: #242424; border-color: #3a3a3a; color: #e2e2e2; }
+}

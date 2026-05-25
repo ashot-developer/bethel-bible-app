@@ -1,0 +1,56 @@
+appId: com.bethelchurch.bible
+productName: Bethel Mrgashat Bible
+copyright: Copyright © 2024 Bethel Mrgashat
+
+directories:
+  output: release
+  buildResources: assets
+
+extraMetadata:
+  main: dist/electron/electron/main.js
+
+files:
+  - dist/electron/**/*
+  - dist/renderer/browser/**/*
+  - node_modules/**/*
+  - package.json
+
+extraResources:
+  - from: src/assets/databases
+    to: databases
+    filter:
+      - "**/*.SQLite3"
+
+mac:
+  category: public.app-category.lifestyle
+  icon: assets/logo.png
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+win:
+  icon: assets/logo.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+publish: null
