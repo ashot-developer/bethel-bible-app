@@ -12,7 +12,6 @@ import { ElectronService } from '../../core/services/electron.service';
   template: `
 <div class="settings-root">
   <div class="settings-inner">
-
     <!-- App info -->
     <div class="settings-card">
       <div class="card-header">
@@ -103,6 +102,19 @@ import { ElectronService } from '../../core/services/electron.service';
       }
     </div>
 
+        <!-- macOS install note -->
+    @if (isMac) {
+      <div class="mac-note">
+        <i class="pi pi-apple"></i>
+        <div>
+          <div class="mac-note-title">macOS-ի տեղադրման նշում</div>
+          <div class="mac-note-body">
+            Եթե տեսնում եք «վնասված է» հաղորդագրություն, գործարկեք Terminal-ում.
+          </div>
+          <code class="mac-note-cmd">xattr -cr "/Applications/Bethel Mrgashat Bible.app"</code>
+        </div>
+      </div>
+    }
   </div>
 </div>
   `,
@@ -122,6 +134,23 @@ import { ElectronService } from '../../core/services/electron.service';
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+    }
+
+    .mac-note {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      background: rgba(0,0,0,0.04); border: 1px solid var(--surface-border);
+      border-radius: 10px; padding: 0.9rem 1rem;
+    }
+    :host-context(.dark) .mac-note { background: rgba(255,255,255,0.04); }
+    .mac-note > i { font-size: 1.1rem; color: var(--text-color-secondary); margin-top: 2px; flex-shrink: 0; }
+    .mac-note-title { font-size: 0.82rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.25rem; }
+    .mac-note-body  { font-size: 0.8rem; color: var(--text-color-secondary); margin-bottom: 0.4rem; line-height: 1.5; }
+    .mac-note-cmd {
+      display: block; font-size: 0.78rem;
+      background: var(--surface-ground); border: 1px solid var(--surface-border);
+      border-radius: 6px; padding: 0.35rem 0.6rem;
+      color: var(--bethel-primary); font-family: monospace;
+      user-select: all;
     }
 
     .settings-card {
@@ -284,6 +313,7 @@ export class SettingsComponent implements OnInit {
   private electron = inject(ElectronService);
 
   appVersion = signal('...');
+  isMac = navigator.platform.toLowerCase().startsWith('mac');
 
   async ngOnInit(): Promise<void> {
     const v = await this.electron.appApi?.getVersion();

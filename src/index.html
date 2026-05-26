@@ -7,8 +7,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; img-src 'self' data:; font-src 'self' data: http://localhost:*;">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    #app-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      z-index: 9999;
+      gap: 1.5rem;
+      transition: opacity 0.35s ease;
+    }
+    #app-loader.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #app-loader img {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+    #app-loader .app-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #555;
+      letter-spacing: 0.01em;
+      margin-top: -0.5rem;
+    }
+    #app-loader .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2.5px solid rgba(245, 166, 35, 0.2);
+      border-top-color: #f5a623;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body class="m-0 p-0">
+
+  <div id="app-loader">
+    <img src="assets/logo.png" alt="Bethel" />
+    <div class="app-name">Bethel Mrgashat Bible</div>
+    <div class="spinner"></div>
+  </div>
+
   <app-root></app-root>
 </body>
 </html>

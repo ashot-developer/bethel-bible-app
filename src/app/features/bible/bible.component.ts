@@ -236,6 +236,11 @@ export class BibleComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.st.init();
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      loader.classList.add('fade-out');
+      setTimeout(() => loader.remove(), 350);
+    }
   }
 
   toggleMode(m: 'search' | 'bookmarks'): void {
