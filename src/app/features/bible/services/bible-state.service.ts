@@ -27,6 +27,14 @@ export class BibleStateService {
   // ── View mode ──────────────────────────────────────────────────────────────
   mode = signal<ViewMode>('read');
 
+  // ── Search persistence ─────────────────────────────────────────────────────
+  searchQuery     = signal('');
+  searchResults   = signal<BibleVerse[]>([]);
+  searchLastQuery = signal('');
+
+  // ── Verse jump highlight (only when explicitly navigated) ──────────────────
+  verseJump = signal(false);
+
   // ── Sidebar ────────────────────────────────────────────────────────────────
   sidebarOpen = signal(false);
   sidebarStep = signal<SidebarStep>('books');
@@ -51,27 +59,55 @@ export class BibleStateService {
     return `${b.short_name} ${c}:${v}`;
   });
 
+  private readonly HISTORY_KEY = 'bethel_last_position';
+
+  private _savePosition(): void {
+    const book = this.selectedBook();
+    const ch   = this.selectedChapter();
+    if (!book || !ch) return;
+    localStorage.setItem(this.HISTORY_KEY, JSON.stringify({
+      translation: this.selectedTranslation(),
+      book_number: book.book_number,
+      chapter: ch,
+    }));
+  }
+
+  private _loadHistory(): { translation: string; book_number: number; chapter: number } | null {
+    try {
+      const raw = localStorage.getItem(this.HISTORY_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
   // ── Init ───────────────────────────────────────────────────────────────────
   async init(): Promise<void> {
     const t = await this.bible.getTranslations();
     this.translations.set(t);
-    if (t.length && !t.find(x => x.id === this.selectedTranslation())) {
-      this.selectedTranslation.set(t[0].id);
-    }
+
+    const history = this._loadHistory();
+    const savedTranslation = history?.translation;
+    const translationToUse = (savedTranslation && t.find(x => x.id === savedTranslation))
+      ? savedTranslation
+      : (t.length ? t[0].id : this.selectedTranslation());
+    this.selectedTranslation.set(translationToUse);
+
     await Promise.all([this._loadBooks(), this.loadBookmarks()]);
 
-    // Pre-select first book → chapter 1 → verse 1 (no sidebar animation)
     const books = this.books();
     if (!books.length) return;
-    const book = books[0];
+
+    const savedBook = history ? books.find(b => b.book_number === history.book_number) : null;
+    const book = savedBook ?? books[0];
     this.selectedBook.set(book);
+
     const chs = await this.bible.getChapters(this.selectedTranslation(), book.book_number);
     this.chapters.set(chs);
     if (!chs.length) return;
-    this.selectedChapter.set(chs[0]);
-    const vs = await this.bible.getVerses(this.selectedTranslation(), book.book_number, chs[0]);
+
+    const ch = (history && chs.includes(history.chapter)) ? history.chapter : chs[0];
+    this.selectedChapter.set(ch);
+    const vs = await this.bible.getVerses(this.selectedTranslation(), book.book_number, ch);
     this.verses.set(vs);
-    if (vs.length) this.selectedVerse.set(vs[0].verse);
   }
 
   // ── Translation change ─────────────────────────────────────────────────────
@@ -96,6 +132,7 @@ export class BibleStateService {
     this.selectedVerse.set(null);
     const vs = await this.bible.getVerses(this.selectedTranslation(), bookNumber, ch);
     this.verses.set(vs);
+    this._savePosition();
   }
 
   // ── Prev / Next chapter ────────────────────────────────────────────────────
@@ -186,6 +223,7 @@ export class BibleStateService {
       this.selectedTranslation(), this.selectedBook()!.book_number, ch
     );
     this.verses.set(vs);
+    this._savePosition();
     this.sidebarStep.set('verses');
   }
 
@@ -210,6 +248,7 @@ export class BibleStateService {
     this.verses.set(vs);
     this.selectedChapter.set(bm.chapter);
     this.selectedVerse.set(bm.verse);
+    this.verseJump.set(true);
     this.mode.set('read');
   }
 
@@ -224,6 +263,7 @@ export class BibleStateService {
     const vs = await this.bible.getVerses(this.selectedTranslation(), book.book_number, v.chapter);
     this.verses.set(vs);
     this.selectedVerse.set(v.verse);
+    this.verseJump.set(true);
     this.mode.set('read');
   }
 
@@ -294,6 +334,25 @@ export class BibleStateService {
 
   async search(query: string): Promise<BibleVerse[]> {
     return this.bible.search(this.selectedTranslation(), query);
+  }
+
+  async suggest(query: string): Promise<{ word: string; count: number }[]> {
+    return this.bible.suggest(this.selectedTranslation(), query);
+  }
+
+  async getVerseAcrossTranslations(
+    bookNumber: number, chapter: number, verse: number
+  ): Promise<{ translation: BibleTranslation; text: string }[]> {
+    const results = await Promise.all(
+      this.translations().map(async t => {
+        try {
+          const verses = await this.bible.getVerses(t.id, bookNumber, chapter);
+          const found  = verses.find(v => v.verse === verse);
+          return { translation: t, text: found?.text ?? '' };
+        } catch { return { translation: t, text: '' }; }
+      })
+    );
+    return results.filter(r => r.text.length > 0);
   }
 
   formatVerse(v: BibleVerse): string {

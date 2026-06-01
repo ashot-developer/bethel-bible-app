@@ -77,6 +77,8 @@ export function registerIpcHandlers(): void {
     db.getVerse(translationId, bookNumber, chapter, verse));
   ipcMain.handle(IPC_CHANNELS.BIBLE.SEARCH, (_, translationId: string, query: string) =>
     db.searchVerses(translationId, query));
+  ipcMain.handle(IPC_CHANNELS.BIBLE.SUGGEST, (_, translationId: string, query: string) =>
+    db.suggestWords(translationId, query));
 
   // ── Bookmarks ──────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.BOOKMARKS.GET_ALL, () => db.getBookmarks());

@@ -21,6 +21,7 @@ interface ElectronAPI {
     getVerses(translationId: string, bookNumber: number, chapter: number): Promise<BibleVerse[]>;
     getVerse(translationId: string, bookNumber: number, chapter: number, verse: number): Promise<BibleVerse | null>;
     search(translationId: string, query: string): Promise<BibleVerse[]>;
+    suggest(translationId: string, query: string): Promise<{ word: string; count: number }[]>;
   };
   bookmarks: {
     getAll(): Promise<Bookmark[]>;

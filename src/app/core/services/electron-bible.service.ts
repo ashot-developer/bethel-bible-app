@@ -12,6 +12,7 @@ export class ElectronBibleService extends BibleDataService {
   getChapters(t: string, b: number): Promise<number[]>                                   { return this.e.bible!.getChapters(t, b); }
   getVerses(t: string, b: number, c: number): Promise<BibleVerse[]>                      { return this.e.bible!.getVerses(t, b, c); }
   search(t: string, q: string): Promise<BibleVerse[]>                                    { return this.e.bible!.search(t, q); }
+  suggest(t: string, q: string): Promise<{ word: string; count: number }[]>              { return this.e.bible!.suggest(t, q); }
   getBookmarks(): Promise<Bookmark[]>                                                     { return this.e.bookmarks!.getAll(); }
   addBookmark(bm: Omit<Bookmark, 'id' | 'created_at'>): Promise<Bookmark>               { return this.e.bookmarks!.add(bm); }
   removeBookmark(id: number): Promise<void>                                               { return this.e.bookmarks!.remove(id); }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Match the app dark-mode surface color, same as surface-card in dark theme -->
+        <item name="android:windowBackground">#FF1C1C1C</item>
+    </style>
+</resources>

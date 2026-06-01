@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { BibleStateService } from '../services/bible-state.service';
 
 @Component({
@@ -13,8 +13,20 @@ import { BibleStateService } from '../services/bible-state.service';
         </button>
       </div>
       <div class="panel-scroll">
+        <div class="section-hd">Հին կտակարան</div>
         <div class="books-grid">
-          @for (book of st.books(); track book.book_number) {
+          @for (book of ot(); track book.book_number) {
+            <button class="book-btn"
+                    [class.active]="st.selectedBook()?.book_number === book.book_number"
+                    (click)="st.selectBook(book)"
+                    [title]="book.long_name">
+              {{ book.short_name }}
+            </button>
+          }
+        </div>
+        <div class="section-hd">Նոր կտակարան</div>
+        <div class="books-grid">
+          @for (book of nt(); track book.book_number) {
             <button class="book-btn"
                     [class.active]="st.selectedBook()?.book_number === book.book_number"
                     (click)="st.selectBook(book)"
@@ -51,7 +63,20 @@ import { BibleStateService } from '../services/bible-state.service';
 
     .panel-scroll { flex: 1; overflow-y: auto; padding: 0.6rem; }
 
-    .books-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .section-hd {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-color-secondary);
+      padding: 0.5rem 0.2rem 0.35rem;
+      margin-top: 0.25rem;
+      border-bottom: 1px solid var(--surface-border);
+      margin-bottom: 0.4rem;
+    }
+    .section-hd:first-child { margin-top: 0; }
+
+    .books-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 0.5rem; }
 
     .book-btn {
       border: 1px solid var(--surface-border);
@@ -75,4 +100,6 @@ import { BibleStateService } from '../services/bible-state.service';
 })
 export class BookListComponent {
   st = inject(BibleStateService);
+  ot = computed(() => this.st.books().filter(b => b.book_number <= 460));
+  nt = computed(() => this.st.books().filter(b => b.book_number >= 470));
 }

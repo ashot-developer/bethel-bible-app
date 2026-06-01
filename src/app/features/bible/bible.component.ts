@@ -2,9 +2,6 @@ import { Component, OnInit, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 
 import { BibleStateService } from './services/bible-state.service';
@@ -20,8 +17,7 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
   standalone: true,
   providers: [MessageService],
   imports: [
-    FormsModule, DropdownModule, ToastModule, DialogModule,
-    InputTextareaModule, ButtonModule,
+    FormsModule, DropdownModule, ToastModule,
     BookListComponent, ChapterListComponent, VersePickerComponent,
     VerseListComponent, BibleSearchComponent, BookmarksComponent,
   ],
@@ -44,7 +40,7 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
 
     <!-- Top bar -->
     <div class="top-bar">
-      <button class="ref-btn" (click)="st.openSidebar()">
+      <button class="ref-btn" (click)="st.sidebarOpen() ? st.closeSidebar() : st.openSidebar()">
         <i class="pi pi-bars"></i>
         <span>{{ st.currentRef() }}</span>
       </button>
@@ -58,7 +54,12 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
         placeholder="Թարգ."
         styleClass="trans-dd"
         appendTo="body"
-      />
+      >
+        <ng-template pTemplate="selectedItem" let-item>
+          <span class="dd-full">{{ item?.name }}</span>
+          <span class="dd-short">{{ item?.id }}</span>
+        </ng-template>
+      </p-dropdown>
       <button class="icon-btn" [class.active]="st.mode() === 'search'"
               (click)="toggleMode('search')" title="Որոնել">
         <i class="pi pi-search"></i>
@@ -74,6 +75,11 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
 
     <!-- Content area -->
     <div class="content">
+      @if (initError) {
+        <div style="padding:1.5rem;color:red;font-size:0.85rem;white-space:pre-wrap;word-break:break-all;">
+          <strong>Init error:</strong><br>{{ initError }}
+        </div>
+      }
       @if (st.mode() === 'read')      { <app-verse-list /> }
       @if (st.mode() === 'search')    { <app-bible-search /> }
       @if (st.mode() === 'bookmarks') { <app-bookmarks /> }
@@ -82,20 +88,82 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
 </div>
 
 <!-- Bookmark note dialog -->
-<p-dialog [(visible)]="showDialog" header="Ավելացնել Էջանիշ" [modal]="true" [style]="{width:'380px'}">
-  <div class="flex flex-column gap-2 pt-2">
-    <label class="text-sm font-semibold">Նշում (կամընտիր)</label>
-    <textarea pInputTextarea [ngModel]="st.pendingNote()" (ngModelChange)="st.pendingNote.set($event)"
-              rows="3" class="w-full" placeholder="Անձնական նշում..."></textarea>
+@if (st.showNoteDialog()) {
+  <div class="bm-backdrop" (click)="st.cancelBookmark()">
+    <div class="bm-dialog" (click)="$event.stopPropagation()">
+      <div class="bm-dialog-header">
+        <span><i class="pi pi-bookmark-fill"></i>&nbsp;Ավելացնել Էջանիշ</span>
+        <button class="bm-close" (click)="st.cancelBookmark()"><i class="pi pi-times"></i></button>
+      </div>
+      <div class="bm-dialog-body">
+        <label class="bm-label">Նշում <span class="bm-opt">(կամընտիր)</span></label>
+        <textarea class="bm-textarea" [ngModel]="st.pendingNote()" (ngModelChange)="st.pendingNote.set($event)"
+                  rows="3" placeholder="Անձնական նշում..."></textarea>
+      </div>
+      <div class="bm-dialog-footer">
+        <button class="bm-btn cancel" (click)="st.cancelBookmark()">Չեղարկել</button>
+        <button class="bm-btn primary" (click)="confirmBookmark()">
+          <i class="pi pi-bookmark"></i> Պահպանել
+        </button>
+      </div>
+    </div>
   </div>
-  <ng-template pTemplate="footer">
-    <p-button label="Չեղարկել" [text]="true" (onClick)="st.cancelBookmark()" />
-    <p-button label="Պահպանել" icon="pi pi-bookmark" (onClick)="confirmBookmark()" />
-  </ng-template>
-</p-dialog>
+}
   `,
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+
+    /* ── Bookmark dialog ── */
+    .bm-backdrop {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.38);
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .bm-dialog {
+      background: var(--surface-card); border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+      width: 100%; max-width: 380px;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .bm-dialog-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 1.1rem 0.75rem;
+      border-bottom: 1px solid var(--surface-border);
+      font-size: 0.95rem; font-weight: 700; color: var(--bethel-primary);
+    }
+    .bm-close {
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text-color-secondary); padding: 0.25rem; border-radius: 6px;
+      display: flex; align-items: center; font-size: 0.9rem; transition: all 0.15s; font-family: inherit;
+    }
+    .bm-close:hover { background: var(--surface-hover); color: var(--bethel-primary); }
+    .bm-dialog-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .bm-label { font-size: 0.82rem; font-weight: 600; color: var(--text-color); }
+    .bm-opt { font-weight: 400; color: var(--text-color-secondary); }
+    .bm-textarea {
+      width: 100%; resize: vertical; border-radius: 8px; padding: 0.55rem 0.75rem;
+      border: 1.5px solid var(--surface-border); background: var(--surface-ground);
+      color: var(--text-color); font-size: 0.95rem; font-family: inherit;
+      outline: none; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .bm-textarea:focus { border-color: var(--bethel-primary); }
+    .bm-dialog-footer {
+      display: flex; justify-content: flex-end; gap: 0.5rem;
+      padding: 0.75rem 1.1rem;
+      border-top: 1px solid var(--surface-border);
+    }
+    .bm-btn {
+      border: 1.5px solid var(--surface-border); background: var(--surface-ground);
+      color: var(--text-color); border-radius: 8px; padding: 0.38rem 1rem;
+      cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      font-family: inherit; transition: all 0.15s;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .bm-btn.cancel:hover { border-color: var(--bethel-primary); color: var(--bethel-primary); }
+    .bm-btn.primary {
+      background: var(--bethel-primary); border-color: var(--bethel-primary); color: #fff;
+    }
+    .bm-btn.primary:hover { opacity: 0.88; }
 
     /* ── Layout ── */
     .bible-layout {
@@ -198,6 +266,18 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
         text-overflow: ellipsis;
         display: block;
       }
+
+      .dd-short { display: none; }
+    }
+
+    @media (max-width: 576px) {
+      ::ng-deep .trans-dd {
+        width: auto !important;
+        max-width: none !important;
+        min-width: 64px !important;
+        .dd-full  { display: none; }
+        .dd-short { display: inline; font-size: 0.82rem; font-weight: 700; }
+      }
     }
 
     .icon-btn {
@@ -234,8 +314,15 @@ export class BibleComponent implements OnInit {
     return `translateX(${px}px)`;
   });
 
+  initError = '';
+
   async ngOnInit(): Promise<void> {
-    await this.st.init();
+    try {
+      await this.st.init();
+    } catch (e: any) {
+      this.initError = e?.message ?? String(e);
+      console.error('BibleState init failed:', e);
+    }
     const loader = document.getElementById('app-loader');
     if (loader) {
       loader.classList.add('fade-out');

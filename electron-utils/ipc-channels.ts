@@ -6,6 +6,7 @@ export const IPC_CHANNELS = {
     GET_VERSES: 'bible:getVerses',
     GET_VERSE: 'bible:getVerse',
     SEARCH: 'bible:search',
+    SUGGEST: 'bible:suggest',
   },
   BOOKMARKS: {
     GET_ALL: 'bookmarks:getAll',

@@ -73,11 +73,17 @@ import type { Bookmark } from '../../../core/models/bible.models';
     .verse-row:hover .va { opacity: 1; }
 
     .vn { min-width: 22px; font-size: 0.7rem; font-weight: 700; color: var(--bethel-primary); padding-top: 3px; flex-shrink: 0; }
-    .vn.ref { min-width: 86px; white-space: nowrap; }
+    .vn.ref { min-width: 165px; white-space: nowrap; }
     .vt { flex: 1; line-height: 1.78; font-size: 0.97rem; color: var(--text-color); }
-    .va { display: flex; gap: 0.1rem; opacity: 1; flex-shrink: 0; }
+    .va { display: flex; gap: 0.1rem; flex-shrink: 0; }
 
-    .bm-body { display: flex; flex-direction: column; flex: 1; }
+    .bm-body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    @media (max-width: 576px) {
+      .verse-row  { flex-wrap: wrap; }
+      .vn.ref     { flex: 1; min-width: unset; order: 1; }
+      .va         { order: 2; }
+      .bm-body    { order: 3; flex-basis: 100%; }
+    }
     .bm-note { font-size: 0.78rem; color: var(--text-color-secondary); font-style: italic; margin-top: 0.2rem; }
     .bm-tr   { font-size: 0.7rem; color: var(--text-color-secondary); margin-top: 0.15rem; opacity: 0.65; }
 

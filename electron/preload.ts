@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invoke(IPC_CHANNELS.BIBLE.GET_VERSE, translationId, bookNumber, chapter, verse),
     search: (translationId: string, query: string): Promise<BibleVerse[]> =>
       invoke(IPC_CHANNELS.BIBLE.SEARCH, translationId, query),
+    suggest: (translationId: string, query: string): Promise<{ word: string; count: number }[]> =>
+      invoke(IPC_CHANNELS.BIBLE.SUGGEST, translationId, query),
   },
 
   bookmarks: {

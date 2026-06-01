@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, Menu, shell } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers, performAutoUpdateCheck } from '../electron-utils/ipc-handlers';
 
@@ -34,6 +34,7 @@ function createWindow(): void {
   }
 
   mainWindow.once('ready-to-show', () => {
+    mainWindow?.maximize();
     mainWindow?.show();
     // Auto-check for updates 10 s after window is visible
     setTimeout(() => {
@@ -67,7 +68,10 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Security: prevent new window creation
+// Open external links in the system browser instead of a new Electron window
 app.on('web-contents-created', (_, contents) => {
-  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  contents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 });

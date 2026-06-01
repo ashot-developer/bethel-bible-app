@@ -30,6 +30,7 @@
 // ── Global Reset ──────────────────────────────────────────────────────────
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -63,6 +64,13 @@ html, body {
   box-shadow: none !important;
 }
 .p-button {
+  &:focus { box-shadow: none; }
+  &:focus-visible { box-shadow: 0 0 0 2px rgba(245,166,35,0.5); }
+  &.p-button-text:not(:disabled):active {
+    background: rgba(245,166,35,0.14);
+    color: var(--bethel-primary);
+    border-color: transparent;
+  }
   &.p-button-primary {
     background: var(--bethel-primary);
     border-color: var(--bethel-primary);
@@ -113,6 +121,9 @@ html, body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface-card);
 }
 
 .app-content {
@@ -281,6 +292,9 @@ body.dark-mode {
     background: #1c1c1c;
     border-bottom-color: #2e2e2e;
   }
+
+  .p-button:focus { box-shadow: none; }
+  .p-button:focus-visible { box-shadow: 0 0 0 2px rgba(245,166,35,0.5); }
 
   // PrimeNG component backgrounds
   .p-dropdown,

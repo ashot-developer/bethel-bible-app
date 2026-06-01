@@ -2,8 +2,6 @@ import { Component, inject, computed } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
 import { ThemeService } from '../../core/services/theme.service';
 import { UpdateService } from '../../core/services/update.service';
 import { ElectronService } from '../../core/services/electron.service';
@@ -12,7 +10,7 @@ import { BibleStateService } from '../../features/bible/services/bible-state.ser
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [ButtonModule, TooltipModule],
+  imports: [],
   template: `
     <div class="app-toolbar" [class.electron]="electron.isElectron">
 
@@ -35,15 +33,10 @@ import { BibleStateService } from '../../features/bible/services/bible-state.ser
             <span class="update-dot"></span>
           }
         </button>
-        <p-button
-          [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
-          [rounded]="true"
-          [text]="true"
-          size="small"
-          (onClick)="themeService.toggle()"
-          [pTooltip]="themeService.isDark() ? 'Light mode' : 'Dark mode'"
-          tooltipPosition="bottom"
-        />
+        <button class="tb-icon-btn toggle-theme" (click)="themeService.toggle()"
+                [title]="themeService.isDark() ? 'Light mode' : 'Dark mode'">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
         <img src="assets/logo.png" alt="Bethel" class="toolbar-logo" />
       </div>
 
@@ -97,6 +90,9 @@ import { BibleStateService } from '../../features/bible/services/bible-state.ser
       align-items: center;
       transition: all 0.15s;
       font-family: inherit;
+    }
+    .toggle-theme.tb-icon-btn {
+      margin-right: 5px;
     }
     .tb-icon-btn:hover { background: var(--surface-hover); color: var(--bethel-primary); }
     .tb-icon-btn.active { color: var(--bethel-primary); background: rgba(245,166,35,0.12); }

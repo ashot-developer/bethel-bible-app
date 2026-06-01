@@ -27,17 +27,33 @@ function getAppDbPath(): string {
 }
 
 const TRANSLATIONS: Record<string, { file: string; name: string; language: string; description: string; hasStrongNumbers: boolean; rightToLeft: boolean }> = {
-  'WAB':    { file: 'WAB.SQLite3',    name: 'Բեյրութի թարգմանություն', language: 'hy-west', description: 'Western Armenian Bible, 1994', hasStrongNumbers: false, rightToLeft: false },
-  'Ararat': { file: 'Ararat.SQLite3', name: 'Արարատյան Թարգմանություն', language: 'hy', description: 'Eastern Armenian Bible - ARARAT, 1910', hasStrongNumbers: false, rightToLeft: false },
-  'KJV': { file: 'KJV.SQLite3', name: 'King James Version', language: 'en', description: 'King James Version (1850 revision)', hasStrongNumbers: true, rightToLeft: false },
-  'NRAB': { file: 'NRAB.SQLite3', name: 'Нов. Рус.-Арм. Библия', language: 'hy-ru', description: 'New Russian-Armenian Bible 2018', hasStrongNumbers: false, rightToLeft: false },
-  'RST77': { file: 'RST77.SQLite3', name: 'Синодальный перевод', language: 'ru', description: 'Russian Synodal Translation 1977', hasStrongNumbers: false, rightToLeft: false },
-  'RSTI':  { file: 'RSTI.SQLite3',  name: 'Синодальный (с индексами)', language: 'ru', description: 'Russian Synodal with indices', hasStrongNumbers: false, rightToLeft: false },
-  'RSTM':  { file: 'RSTM.SQLite3',  name: 'Синодальный (с морфологией)', language: 'ru', description: 'Russian Synodal with morphology', hasStrongNumbers: false, rightToLeft: false },
+  'WAB':    { file: 'WAB.SQLite3',    name: 'Բեյրութի թարգմանություն',   language: 'hy-west', description: 'Western Armenian Bible, 1994',          hasStrongNumbers: false, rightToLeft: false },
+  'Ararat': { file: 'Ararat.SQLite3', name: 'Արարատյան Թարգմանություն',   language: 'hy',      description: 'Eastern Armenian Bible - ARARAT, 1910', hasStrongNumbers: false, rightToLeft: false },
+  'RST77':  { file: 'RST77.SQLite3',  name: 'Синодальный перевод',         language: 'ru',      description: 'Russian Synodal Translation 1977',      hasStrongNumbers: false, rightToLeft: false },
+  'RSTI':   { file: 'RSTI.SQLite3',   name: 'Синодальный (с индексами)',   language: 'ru',      description: 'Russian Synodal with indices',          hasStrongNumbers: false, rightToLeft: false },
+  'RSTM':   { file: 'RSTM.SQLite3',   name: 'Синодальный (с морфологией)', language: 'ru',      description: 'Russian Synodal with morphology',       hasStrongNumbers: false, rightToLeft: false },
+  'KJV':    { file: 'KJV.SQLite3',    name: 'King James Version',          language: 'en',      description: 'King James Version (1850 revision)',    hasStrongNumbers: true,  rightToLeft: false },
 };
 
 // Bible DBs cache
 const bibleDbCache: Record<string, Database.Database> = {};
+
+type CachedVerse = { book_number: number; chapter: number; verse: number; text: string; text_lower: string; book_name: string };
+const verseCache: Record<string, CachedVerse[]> = {};
+
+function getVerseCache(translationId: string): CachedVerse[] {
+  if (verseCache[translationId]) return verseCache[translationId];
+  const db = getBibleDb(translationId);
+  const rows = db.prepare(`
+    SELECT v.book_number, v.chapter, v.verse, v.text, b.long_name AS book_name
+    FROM verses v JOIN books b ON v.book_number = b.book_number
+  `).all() as { book_number: number; chapter: number; verse: number; text: string; book_name: string }[];
+  verseCache[translationId] = rows.map(r => {
+    const text = stripVerseMarkup(r.text);
+    return { ...r, text, text_lower: text.toLowerCase() };
+  });
+  return verseCache[translationId];
+}
 
 function getBibleDb(translationId: string): Database.Database {
   if (bibleDbCache[translationId]) return bibleDbCache[translationId];
@@ -188,32 +204,33 @@ export function getVerse(translationId: string, bookNumber: number, chapter: num
 // Modern Eastern Armenian ↔ Classical Armenian character mapping.
 // Users type modern Eastern Armenian; old translations use classical spelling.
 function armenianVariants(query: string): string[] {
-  const VO   = 'ո';     // ո
-  const YIWN = 'ւ';     // ւ
-  const U    = VO + YIWN;   // ու  (digraph)
+  const VO   = '\u0578';
+  const YIWN = '\u0582';
+  const U    = VO + YIWN;
+
+  const subs: [RegExp, string][] = [
+    [/\u057e/g, '\u0582'], [/\u0582/g, '\u057e'],
+    [/\u054e/g, '\u0552'], [/\u0552/g, '\u054e'],
+    [/\u0570/g, '\u0575'], [/\u0575/g, '\u0570'],
+    [/\u0540/g, '\u0545'], [/\u0545/g, '\u0540'],
+    [/\u0567/g, '\u0565'], [/\u0565/g, '\u0567'],
+    [/\u0537/g, '\u0535'], [/\u0535/g, '\u0537'],
+    [/\u0587/g, '\u0565\u0582'], [/\u0565\u0582/g, '\u0587'],
+    [new RegExp(U, 'g'), VO],
+    [new RegExp(`${VO}(?!${YIWN})`, 'g'), U],
+  ];
 
   const variants = new Set<string>([query]);
-
-  // Modern Eastern Armenian → Classical
-  variants.add(query
-    .replace(/վ/g, 'ւ').replace(/Վ/g, 'Ւ')  // վ→ւ, Վ→Ւ
-    .replace(/հ/g, 'յ').replace(/Հ/g, 'Յ')  // հ→յ, Հ→Յ
-    .replace(/և/g, 'եւ')                          // և→եւ
-    .replace(new RegExp(U, 'g'), VO)                             // ու→ո
-  );
-
-  // Classical → Modern Eastern Armenian
-  variants.add(query
-    .replace(/ւ/g, 'վ').replace(/Ւ/g, 'Վ')  // ւ→վ, Ւ→Վ
-    .replace(/յ/g, 'հ').replace(/Յ/g, 'Հ')  // յ→հ, Յ→Հ
-    .replace(/եւ/g, 'և')                          // եւ→և
-    .replace(new RegExp(`${VO}(?!${YIWN})`, 'g'), U)            // ո→ու (when not already ու)
-  );
-
+  for (const [find, rep] of subs) {
+    for (const v of [...variants]) {
+      const n = v.replace(find, rep);
+      if (n !== v) variants.add(n);
+    }
+  }
   return [...variants].filter(v => v.length > 0);
 }
 
-const ARMENIAN_TRANSLATIONS = new Set(['Ararat', 'NRAB', 'WAB']);
+const ARMENIAN_TRANSLATIONS = new Set(['WAB', 'Ararat']);
 
 export function searchVerses(translationId: string, query: string): BibleVerse[] {
   if (!query || query.trim().length < 1) return [];
@@ -223,18 +240,76 @@ export function searchVerses(translationId: string, query: string): BibleVerse[]
     ? armenianVariants(query.trim())
     : [query.trim()];
 
-  const conditions = variants.map(() => `ulower(v.text) LIKE ulower(?) ESCAPE '\\'`).join(' OR ');
-  const params     = variants.map(v => `%${v}%`);
+  const qlVariants  = variants.map(v => v.toLowerCase());
+  const spaceVars   = qlVariants.map(v => ' ' + v);
+  const allVerses   = getVerseCache(translationId);
+  const results: BibleVerse[] = [];
 
-  const rows = db.prepare(`
-    SELECT v.book_number, v.chapter, v.verse, v.text, b.long_name as book_name
-    FROM verses v
-    JOIN books b ON v.book_number = b.book_number
-    WHERE ${conditions}
-    LIMIT 200
-  `).all(...params) as BibleVerse[];
+  for (const v of allVerses) {
+    const tl = v.text_lower;
+    for (let i = 0; i < qlVariants.length; i++) {
+      if (tl.startsWith(qlVariants[i]) || tl.includes(spaceVars[i])) {
+        results.push(v);
+        break;
+      }
+    }
+    if (results.length >= 200) break;
+  }
+  return results;
+}
 
-  return rows.map(r => ({ ...r, text: stripVerseMarkup(r.text) }));
+export function suggestWords(
+  translationId: string, query: string
+): { word: string; count: number }[] {
+  if (!query || query.trim().length < 2) return [];
+  const db = getBibleDb(translationId);
+
+  const variants = ARMENIAN_TRANSLATIONS.has(translationId)
+    ? armenianVariants(query.trim())
+    : [query.trim()];
+
+  const qlVariants = variants.map(v => v.toLowerCase());
+  const queryLower = query.trim().toLowerCase();
+  const allVerses  = getVerseCache(translationId);
+
+  // Sample: substring match (wide net) to find candidate words
+  const wordSet = new Map<string, number>();
+  let sampled = 0;
+  for (const v of allVerses) {
+    const tl = v.text_lower;
+    let matches = false;
+    for (let i = 0; i < qlVariants.length; i++) {
+      if (tl.includes(qlVariants[i])) { matches = true; break; }
+    }
+    if (!matches) continue;
+    const words = tl.split(/[\s,;:.!?«»"'()\[\]{}—–\-\/]+/).filter(w => w.length > 1);
+    for (const w of words) {
+      if (qlVariants.some(ql => w.startsWith(ql))) wordSet.set(w, (wordSet.get(w) ?? 0) + 1);
+    }
+    if (++sampled >= 400) break;
+  }
+
+  const candidates = [...wordSet.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 100)
+    .map(([word]) => word);
+
+  if (!candidates.length) return [];
+
+  // Count exact occurrences across all verses in a single JS pass
+  const spaceCands = candidates.map(w => ' ' + w);
+  const counts     = new Array<number>(candidates.length).fill(0);
+  for (const v of allVerses) {
+    const tl = v.text_lower;
+    for (let i = 0; i < candidates.length; i++) {
+      if (tl.startsWith(candidates[i]) || tl.includes(spaceCands[i])) counts[i]++;
+    }
+  }
+
+  return candidates
+    .map((word, i) => ({ word, count: counts[i] }))
+    .filter(s => s.count > 0)
+    .sort((a, b) => b.count - a.count);
 }
 
 // ─── Bookmarks API ───────────────────────────────────────────────────────────

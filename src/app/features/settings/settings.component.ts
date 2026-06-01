@@ -46,74 +46,96 @@ import { ElectronService } from '../../core/services/electron.service';
       </div>
     </div>
 
-    <!-- Updates -->
+    <!-- Developer info -->
     <div class="settings-card">
       <div class="card-header">
-        <i class="pi pi-refresh"></i>
-        Թարմացումներ
+        <i class="pi pi-users"></i>
+        Մշակողի մասին
       </div>
-
-      <!-- Status display -->
-      <div class="update-status-row">
-        @switch (updateService.status().state) {
-          @case ('idle') {
-            <div class="status-pill neutral"><i class="pi pi-minus-circle"></i> Չի ստուգվել</div>
-          }
-          @case ('checking') {
-            <div class="status-pill checking"><i class="pi pi-spin pi-spinner"></i> Ստուգում...</div>
-          }
-          @case ('not-available') {
-            <div class="status-pill ok"><i class="pi pi-check-circle"></i> Արդի է — v{{ updateService.status().latestVersion ?? updateService.status().currentVersion }}</div>
-          }
-          @case ('available') {
-            <div class="status-pill update">
-              <i class="pi pi-arrow-circle-up"></i>
-              Հասանելի է v{{ updateService.status().latestVersion }}
-            </div>
-          }
-          @case ('error') {
-            <div class="status-pill error"><i class="pi pi-exclamation-triangle"></i> Կապի սխալ</div>
-          }
-        }
+      <div class="info-row">
+        <span class="info-label">Թիմ</span>
+        <span class="info-value">Bethel Mrgashat IT Team</span>
       </div>
-
-      <!-- Actions -->
-      <div class="update-actions">
-        <button class="action-btn"
-                (click)="checkUpdate()"
-                [disabled]="updateService.status().state === 'checking'">
-          <i class="pi pi-refresh"></i>
-          Ստուգել թարմացումները
-        </button>
-
-        @if (updateService.status().state === 'available') {
-          <button class="action-btn primary" (click)="updateService.openDownload()">
-            <i class="pi pi-download"></i>
-            {{ updateService.status().downloadUrl ? 'Ներբեռնել' : 'Բացել GitHub' }}
-          </button>
-        }
+      <div class="info-row">
+        <span class="info-label">Կայք</span>
+        <a class="info-link" href="https://bethel.am" target="_blank">bethel.am</a>
       </div>
-
-      @if (updateService.status().state === 'available' && updateService.status().releaseNotes) {
-        <div class="release-notes">
-          <div class="release-notes-label">Փոփոխություններ</div>
-          <div class="release-notes-text">{{ updateService.status().releaseNotes }}</div>
-        </div>
-      }
+      <div class="info-row">
+        <span class="info-label">Աջակցություն</span>
+        <a class="info-link" href="mailto:support&#64;bethel.am">support&#64;bethel.am</a>
+      </div>
     </div>
 
-        <!-- macOS install note -->
-    @if (isMac) {
-      <div class="mac-note">
-        <i class="pi pi-apple"></i>
-        <div>
-          <div class="mac-note-title">macOS-ի տեղադրման նշում</div>
-          <div class="mac-note-body">
-            Եթե տեսնում եք «վնասված է» հաղորդագրություն, գործարկեք Terminal-ում.
-          </div>
-          <code class="mac-note-cmd">xattr -cr "/Applications/Bethel Mrgashat Bible.app"</code>
+    <!-- Updates — Electron only -->
+    @if (electron.isElectron) {
+      <div class="settings-card">
+        <div class="card-header">
+          <i class="pi pi-refresh"></i>
+          Թարմացումներ
         </div>
+
+        <!-- Status display -->
+        <div class="update-status-row">
+          @switch (updateService.status().state) {
+            @case ('idle') {
+              <div class="status-pill neutral"><i class="pi pi-minus-circle"></i> Չի ստուգվել</div>
+            }
+            @case ('checking') {
+              <div class="status-pill checking"><i class="pi pi-spin pi-spinner"></i> Ստուգում...</div>
+            }
+            @case ('not-available') {
+              <div class="status-pill ok"><i class="pi pi-check-circle"></i> Արդի է — v{{ updateService.status().latestVersion ?? updateService.status().currentVersion }}</div>
+            }
+            @case ('available') {
+              <div class="status-pill update">
+                <i class="pi pi-arrow-circle-up"></i>
+                Հասանելի է v{{ updateService.status().latestVersion }}
+              </div>
+            }
+            @case ('error') {
+              <div class="status-pill error"><i class="pi pi-exclamation-triangle"></i> Կապի սխալ</div>
+            }
+          }
+        </div>
+
+        <!-- Actions -->
+        <div class="update-actions">
+          <button class="action-btn"
+                  (click)="checkUpdate()"
+                  [disabled]="updateService.status().state === 'checking'">
+            <i class="pi pi-refresh"></i>
+            Ստուգել թարմացումները
+          </button>
+
+          @if (updateService.status().state === 'available') {
+            <button class="action-btn primary" (click)="updateService.openDownload()">
+              <i class="pi pi-download"></i>
+              {{ updateService.status().downloadUrl ? 'Ներբեռնել' : 'Բացել GitHub' }}
+            </button>
+          }
+        </div>
+
+        @if (updateService.status().state === 'available' && updateService.status().releaseNotes) {
+          <div class="release-notes">
+            <div class="release-notes-label">Փոփոխություններ</div>
+            <div class="release-notes-text">{{ updateService.status().releaseNotes }}</div>
+          </div>
+        }
       </div>
+
+      <!-- macOS install note -->
+      @if (isMac) {
+        <div class="mac-note">
+          <i class="pi pi-apple"></i>
+          <div>
+            <div class="mac-note-title">macOS-ի տեղադրման նշում</div>
+            <div class="mac-note-body">
+              Եթե տեսնում եք «վնասված է» հաղորդագրություն, գործարկեք Terminal-ում.
+            </div>
+            <code class="mac-note-cmd">xattr -cr "/Applications/Bethel Mrgashat Bible.app"</code>
+          </div>
+        </div>
+      }
     }
   </div>
 </div>
@@ -193,6 +215,12 @@ import { ElectronService } from '../../core/services/electron.service';
       color: var(--text-color);
     }
 
+    .info-link {
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--bethel-primary); text-decoration: none;
+    }
+    .info-link:hover { text-decoration: underline; }
+
     .version-badge {
       background: rgba(245,166,35,0.12);
       color: var(--bethel-primary);
@@ -224,11 +252,9 @@ import { ElectronService } from '../../core/services/electron.service';
       color: var(--text-color);
       font-family: inherit;
       transition: all 0.15s;
+      outline: none;
     }
-    .theme-toggle-btn:hover {
-      border-color: var(--bethel-primary);
-      color: var(--bethel-primary);
-    }
+    .theme-toggle-btn:hover { border-color: var(--bethel-primary); color: var(--bethel-primary); }
 
     /* Update section */
     .update-status-row {
@@ -271,6 +297,7 @@ import { ElectronService } from '../../core/services/electron.service';
       color: var(--text-color);
       font-family: inherit;
       transition: all 0.15s;
+      outline: none;
     }
     .action-btn:hover:not(:disabled) {
       border-color: var(--bethel-primary);
@@ -310,7 +337,7 @@ import { ElectronService } from '../../core/services/electron.service';
 export class SettingsComponent implements OnInit {
   updateService = inject(UpdateService);
   themeService  = inject(ThemeService);
-  private electron = inject(ElectronService);
+  electron = inject(ElectronService);
 
   appVersion = signal('...');
   isMac = navigator.platform.toLowerCase().startsWith('mac');
