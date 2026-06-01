@@ -146,6 +146,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.UPDATE.OPEN_DOWNLOAD, (_, url: string) => shell.openExternal(url));
   ipcMain.handle(IPC_CHANNELS.UPDATE.DOWNLOAD, async () => {
     if (process.platform !== 'win32' || !app.isPackaged) return;
+    await autoUpdater.checkForUpdates();
     await autoUpdater.downloadUpdate();
   });
   ipcMain.handle(IPC_CHANNELS.UPDATE.INSTALL, () => {
