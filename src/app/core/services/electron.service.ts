@@ -4,12 +4,13 @@ import type { Member } from '../models/member.models';
 import type { ChurchEvent } from '../models/event.models';
 
 export interface UpdateStatus {
-  state: 'idle' | 'checking' | 'available' | 'not-available' | 'error';
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error';
   currentVersion?: string;
   latestVersion?: string;
   releaseUrl?: string;
   downloadUrl?: string;
   releaseNotes?: string;
+  downloadProgress?: number;
   error?: string;
 }
 
@@ -54,6 +55,8 @@ interface ElectronAPI {
     getStatus(): Promise<UpdateStatus>;
     check(): Promise<UpdateStatus>;
     openDownload(url: string): Promise<void>;
+    download(): Promise<void>;
+    install(): Promise<void>;
   };
   on(channel: string, callback: (...args: unknown[]) => void): void;
   off(channel: string, callback: (...args: unknown[]) => void): void;

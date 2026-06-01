@@ -92,25 +92,55 @@ import { ElectronService } from '../../core/services/electron.service';
                 Հասանելի է v{{ updateService.status().latestVersion }}
               </div>
             }
+            @case ('downloading') {
+              <div class="status-pill checking">
+                <i class="pi pi-spin pi-spinner"></i>
+                Ներբեռնում {{ updateService.status().downloadProgress ?? 0 }}%
+              </div>
+            }
+            @case ('downloaded') {
+              <div class="status-pill ok"><i class="pi pi-check-circle"></i> Ներբեռնված է</div>
+            }
             @case ('error') {
               <div class="status-pill error"><i class="pi pi-exclamation-triangle"></i> Կապի սխալ</div>
             }
           }
         </div>
 
+        <!-- Progress bar (Windows download only) -->
+        @if (updateService.status().state === 'downloading') {
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" [style.width.%]="updateService.status().downloadProgress ?? 0"></div>
+          </div>
+        }
+
         <!-- Actions -->
         <div class="update-actions">
           <button class="action-btn"
                   (click)="checkUpdate()"
-                  [disabled]="updateService.status().state === 'checking'">
+                  [disabled]="updateService.status().state === 'checking' || updateService.status().state === 'downloading'">
             <i class="pi pi-refresh"></i>
             Ստուգել թարմացումները
           </button>
 
           @if (updateService.status().state === 'available') {
-            <button class="action-btn primary" (click)="updateService.openDownload()">
-              <i class="pi pi-download"></i>
-              {{ updateService.status().downloadUrl ? 'Ներբեռնել' : 'Բացել GitHub' }}
+            @if (isWindows) {
+              <button class="action-btn primary" (click)="updateService.download()">
+                <i class="pi pi-download"></i>
+                Ներբեռնել և տեղադրել
+              </button>
+            } @else {
+              <button class="action-btn primary" (click)="updateService.openDownload()">
+                <i class="pi pi-download"></i>
+                {{ updateService.status().downloadUrl ? 'Ներբեռնել' : 'Բացել GitHub' }}
+              </button>
+            }
+          }
+
+          @if (updateService.status().state === 'downloaded') {
+            <button class="action-btn primary" (click)="updateService.install()">
+              <i class="pi pi-power-off"></i>
+              Տեղադրել և վերագործարկել
             </button>
           }
         </div>
@@ -277,6 +307,20 @@ import { ElectronService } from '../../core/services/electron.service';
     .status-pill.update   { background: rgba(245,166,35,0.12); color: var(--bethel-primary); }
     .status-pill.error    { background: rgba(208,2,27,0.08); color: var(--bethel-accent); }
 
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--surface-border);
+      margin: 0 1.1rem;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--bethel-primary);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
     .update-actions {
       display: flex;
       gap: 0.65rem;
@@ -341,6 +385,7 @@ export class SettingsComponent implements OnInit {
 
   appVersion = signal('...');
   isMac = navigator.platform.toLowerCase().startsWith('mac');
+  isWindows = navigator.platform.toLowerCase().startsWith('win');
 
   async ngOnInit(): Promise<void> {
     const v = await this.electron.appApi?.getVersion();

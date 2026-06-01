@@ -1,4 +1,5 @@
 import { ipcMain, shell, app, net, BrowserWindow } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { IPC_CHANNELS } from './ipc-channels';
 import type { UpdateStatus } from './ipc-channels';
 import * as db from './sqlite.service';
@@ -65,6 +66,32 @@ export async function performAutoUpdateCheck(win: BrowserWindow): Promise<void> 
   win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
 }
 
+export function setupAutoUpdater(win: BrowserWindow): void {
+  if (process.platform !== 'win32') return;
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+
+  autoUpdater.on('download-progress', (info) => {
+    cachedUpdateStatus = {
+      ...cachedUpdateStatus,
+      state: 'downloading',
+      downloadProgress: Math.round(info.percent),
+    };
+    win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    cachedUpdateStatus = { ...cachedUpdateStatus, state: 'downloaded', downloadProgress: 100 };
+    win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
+  });
+
+  autoUpdater.on('error', (err) => {
+    cachedUpdateStatus = { ...cachedUpdateStatus, state: 'error', error: String(err) };
+    win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
+  });
+}
+
 export function registerIpcHandlers(): void {
   // ── Bible ──────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.BIBLE.GET_TRANSLATIONS, () => db.getTranslations());
@@ -117,4 +144,12 @@ export function registerIpcHandlers(): void {
     return cachedUpdateStatus;
   });
   ipcMain.handle(IPC_CHANNELS.UPDATE.OPEN_DOWNLOAD, (_, url: string) => shell.openExternal(url));
+  ipcMain.handle(IPC_CHANNELS.UPDATE.DOWNLOAD, async () => {
+    if (process.platform !== 'win32' || !app.isPackaged) return;
+    await autoUpdater.downloadUpdate();
+  });
+  ipcMain.handle(IPC_CHANNELS.UPDATE.INSTALL, () => {
+    if (process.platform !== 'win32') return;
+    autoUpdater.quitAndInstall(false, true);
+  });
 }

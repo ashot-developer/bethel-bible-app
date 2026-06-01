@@ -86,6 +86,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invoke(IPC_CHANNELS.UPDATE.CHECK),
     openDownload: (url: string): Promise<void> =>
       invoke(IPC_CHANNELS.UPDATE.OPEN_DOWNLOAD, url),
+    download: (): Promise<void> =>
+      invoke(IPC_CHANNELS.UPDATE.DOWNLOAD),
+    install: (): Promise<void> =>
+      invoke(IPC_CHANNELS.UPDATE.INSTALL),
   },
 
   on: (channel: string, callback: (...args: unknown[]) => void) => {

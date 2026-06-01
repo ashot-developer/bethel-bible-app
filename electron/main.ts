@@ -1,6 +1,6 @@
 import { app, BrowserWindow, Menu, shell } from 'electron';
 import * as path from 'path';
-import { registerIpcHandlers, performAutoUpdateCheck } from '../electron-utils/ipc-handlers';
+import { registerIpcHandlers, performAutoUpdateCheck, setupAutoUpdater } from '../electron-utils/ipc-handlers';
 
 const isDev = !app.isPackaged && process.env['NODE_ENV'] !== 'production';
 
@@ -36,6 +36,7 @@ function createWindow(): void {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.maximize();
     mainWindow?.show();
+    if (mainWindow) setupAutoUpdater(mainWindow);
     // Auto-check for updates 10 s after window is visible
     setTimeout(() => {
       if (mainWindow) performAutoUpdateCheck(mainWindow);

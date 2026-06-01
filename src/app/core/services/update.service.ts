@@ -30,4 +30,13 @@ export class UpdateService {
     const url = s.downloadUrl ?? s.releaseUrl;
     if (url) this.electron.updateApi?.openDownload(url);
   }
+
+  async download(): Promise<void> {
+    this.status.set({ ...this.status(), state: 'downloading', downloadProgress: 0 });
+    await this.electron.updateApi?.download();
+  }
+
+  install(): void {
+    this.electron.updateApi?.install();
+  }
 }

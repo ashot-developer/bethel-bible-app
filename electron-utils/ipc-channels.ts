@@ -41,17 +41,20 @@ export const IPC_CHANNELS = {
     CHECK: 'update:check',
     GET_STATUS: 'update:getStatus',
     OPEN_DOWNLOAD: 'update:openDownload',
+    DOWNLOAD: 'update:download',
+    INSTALL: 'update:install',
     STATUS: 'update:status',
   }
 } as const;
 
 export interface UpdateStatus {
-  state: 'idle' | 'checking' | 'available' | 'not-available' | 'error';
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error';
   currentVersion?: string;
   latestVersion?: string;
   releaseUrl?: string;
   downloadUrl?: string;
   releaseNotes?: string;
+  downloadProgress?: number;
   error?: string;
 }
 

@@ -5,6 +5,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.content.pm.ApplicationInfo;
+import android.webkit.WebView;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import com.getcapacitor.BridgeActivity;
@@ -21,6 +23,12 @@ public class MainActivity extends BridgeActivity {
         // AppCompat resets this flag for non-edge-to-edge themes inside super.onCreate(),
         // so we set it again here.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // Capacitor enables WebView debugging for debug builds, which causes a visible
+        // inspector overlay and extra "Inspect" option during text selection. Force it off
+        // so the debug UI never appears for end users.
+        boolean isDebug = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        WebView.setWebContentsDebuggingEnabled(isDebug);
 
         // AppCompat also installs an insets listener that adds paddingTop = statusBarHeight
         // to the content frame, pushing the WebView down. Override both the frame and its

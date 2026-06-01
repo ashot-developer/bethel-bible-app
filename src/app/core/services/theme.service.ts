@@ -10,13 +10,17 @@ export class ThemeService {
   }
 
   private async loadSavedTheme(): Promise<void> {
-    try {
-      const saved = await this.electron.themeApi?.get();
-      if (saved === 'dark') this.applyDark(true);
-    } catch {
-      const localPref = localStorage.getItem('bethel-theme');
-      if (localPref === 'dark') this.applyDark(true);
+    if (this.electron.isElectron) {
+      try {
+        const saved = await this.electron.themeApi?.get();
+        if (saved === 'dark') this.applyDark(true);
+        return;
+      } catch {
+        // fall through to localStorage
+      }
     }
+    const localPref = localStorage.getItem('bethel-theme');
+    if (localPref === 'dark') this.applyDark(true);
   }
 
   toggle(): void {
