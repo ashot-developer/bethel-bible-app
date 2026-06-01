@@ -13,6 +13,9 @@ const config: CapacitorConfig = {
     StatusBar: {
       overlaysWebView: true,
     },
+    SplashScreen: {
+      launchShowDuration: 0,
+    },
   },
 };
 

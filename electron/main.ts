@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from 'electron';
+import { app, BrowserWindow, Menu, shell, screen } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers, performAutoUpdateCheck, setupAutoUpdater } from '../electron-utils/ipc-handlers';
 
@@ -7,12 +7,13 @@ const isDev = !app.isPackaged && process.env['NODE_ENV'] !== 'production';
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width,
+    height,
     minWidth: 900,
     minHeight: 600,
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

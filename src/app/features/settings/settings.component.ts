@@ -343,7 +343,7 @@ import { ElectronService } from '../../core/services/electron.service';
       transition: all 0.15s;
       outline: none;
     }
-    .action-btn:hover:not(:disabled) {
+    .action-btn:hover:not(:disabled):not(.primary) {
       border-color: var(--bethel-primary);
       color: var(--bethel-primary);
     }

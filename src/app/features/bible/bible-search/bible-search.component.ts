@@ -202,6 +202,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
     .vt { flex: 1; line-height: 1.78; font-size: 0.97rem; color: var(--text-color); min-width: 0; }
     .va { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
     @media (max-width: 576px) {
+      .search-bar { gap: 2px; }
       .verse-row { flex-wrap: wrap; }
       .vn.ref { flex: 1; min-width: unset; order: 1; }
       .va     { order: 2; opacity: 1; }

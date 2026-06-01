@@ -108,7 +108,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
-    .verse-scroll { flex: 1; overflow-y: auto; }
+    .verse-scroll { flex: 1; overflow-y: auto; position: relative; }
 
     .empty {
       display: flex; flex-direction: column; align-items: center;
@@ -287,10 +287,14 @@ export class VerseListComponent {
       if (verse !== null && (changed || jump)) this.scrollToVerse(verse, jump);
       if (jump) untracked(() => this.st.verseJump.set(false));
     });
-    // Clear selection when chapter changes
+    // Clear selection and reset scroll when chapter changes
     effect(() => {
       this.st.selectedChapter();
       this.selectedVerses.set(new Set());
+      setTimeout(() => {
+        const el = this.scrollEl?.nativeElement;
+        if (el) el.scrollTop = 0;
+      });
     }, { allowSignalWrites: true });
   }
 
@@ -356,15 +360,13 @@ export class VerseListComponent {
       if (!container) return;
       const target = container.querySelector(`[data-verse="${verse}"]`) as HTMLElement | null;
       if (!target) return;
-      const offset = target.getBoundingClientRect().top
-        - container.getBoundingClientRect().top
+      const scrollTop = target.offsetTop
         - (container.clientHeight / 2)
         + (target.offsetHeight / 2);
-      container.scrollBy({ top: offset, behavior: 'smooth' });
+      container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
 
-      // restart animation by removing and re-adding the class
       target.classList.remove('verse-selected');
-      void target.offsetWidth; // force reflow to restart animation
+      void target.offsetWidth;
       target.classList.add('verse-selected');
       target.addEventListener('animationend', () => target.classList.remove('verse-selected'), { once: true });
 
@@ -372,7 +374,7 @@ export class VerseListComponent {
         target.classList.add('verse-jump');
         setTimeout(() => target.classList.remove('verse-jump'), 1400);
       }
-    }, 200);
+    }, 350);
   }
 
   copy(v: { verse: number; chapter: number; text: string; book_name?: string }): void {

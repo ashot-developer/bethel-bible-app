@@ -23,7 +23,7 @@ extraResources:
 
 mac:
   category: public.app-category.lifestyle
-  icon: assets/logo.png
+  icon: assets/app-icon.icns
   identity: null
   target:
     - target: dmg
@@ -41,7 +41,7 @@ dmg:
       path: /Applications
 
 win:
-  icon: assets/logo.png
+  icon: assets/app-icon.ico
   target:
     - target: nsis
       arch:
