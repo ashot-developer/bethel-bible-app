@@ -356,7 +356,11 @@ export class VerseListComponent {
       if (!container) return;
       const target = container.querySelector(`[data-verse="${verse}"]`) as HTMLElement | null;
       if (!target) return;
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const offset = target.getBoundingClientRect().top
+        - container.getBoundingClientRect().top
+        - (container.clientHeight / 2)
+        + (target.offsetHeight / 2);
+      container.scrollBy({ top: offset, behavior: 'smooth' });
 
       // restart animation by removing and re-adding the class
       target.classList.remove('verse-selected');
