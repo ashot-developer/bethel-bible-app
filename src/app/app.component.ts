@@ -1,7 +1,9 @@
-import { Component, effect, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, effect, inject, signal } from '@angular/core';
+import { RouterOutlet, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { StatusBar, Style, StatusBarInfo } from '@capacitor/status-bar';
 import { ThemeService } from './core/services/theme.service';
 
@@ -16,13 +18,55 @@ import { ThemeService } from './core/services/theme.service';
         <router-outlet />
       </main>
     </div>
-  `
+    @if (exitToast()) {
+      <div class="exit-toast">Հետ գնալու համար սեղմեք նորից</div>
+    }
+  `,
+  styles: [`
+    .exit-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 9999;
+      animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  `]
 })
 export class AppComponent {
   private themeService = inject(ThemeService);
+  private router = inject(Router);
+  private location = inject(Location);
+  exitToast = signal(false);
+  private exitToastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (!Capacitor.isNativePlatform()) return;
+
+    App.addListener('backButton', ({ canGoBack }) => {
+      const onHome = this.router.url === '/bible' || this.router.url === '/';
+      if (!onHome) {
+        this.location.back();
+        return;
+      }
+      if (this.exitToast()) {
+        App.exitApp();
+        return;
+      }
+      this.exitToast.set(true);
+      this.exitToastTimer = setTimeout(() => {
+        this.exitToast.set(false);
+        this.exitToastTimer = null;
+      }, 2000);
+    });
 
     // Log current status bar info on startup
     StatusBar.getInfo().then((info: StatusBarInfo) => {
