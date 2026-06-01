@@ -12,7 +12,7 @@ import { BibleStateService } from '../../features/bible/services/bible-state.ser
   standalone: true,
   imports: [],
   template: `
-    <div class="app-toolbar" [class.electron]="electron.isElectron">
+    <div class="app-toolbar" [class.electron]="electron.isElectron" [class.mac]="isMac">
 
       <!-- Left: back button -->
       <div class="toolbar-left">
@@ -50,7 +50,7 @@ import { BibleStateService } from '../../features/bible/services/bible-state.ser
       padding: 0 0.5rem;
       -webkit-app-region: drag;
     }
-    .app-toolbar.electron {
+    .app-toolbar.electron.mac {
       padding-left: 80px; /* clears macOS traffic lights (hiddenInset) */
     }
 
@@ -115,6 +115,8 @@ export class ToolbarComponent {
   electron      = inject(ElectronService);
   bibleState    = inject(BibleStateService);
   private router = inject(Router);
+
+  isMac = navigator.platform.toLowerCase().startsWith('mac');
 
   private currentUrl = toSignal(
     this.router.events.pipe(
