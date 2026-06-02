@@ -42,6 +42,29 @@ html, body {
   color: var(--bethel-text);
 }
 
+// ── Remove tap highlight and disable hover on touch devices ───────────────
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+// Prevent sticky hover highlights on touch (only on interactive elements,
+// NOT on structural containers — resetting background on containers makes
+// them transparent and reveals the white <html> root = "light mode flash").
+@media (hover: none) {
+  button:hover,
+  a:hover,
+  .verse-row:hover,
+  .panel-item:hover,
+  .suggestion-item:hover,
+  .verse-item:hover {
+    background-color: transparent !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+  }
+}
+
+
 // ── Scrollbar ─────────────────────────────────────────────────────────────
 ::-webkit-scrollbar {
   width: 6px;
@@ -96,23 +119,13 @@ html, body {
 }
 
 // ── Toolbar ───────────────────────────────────────────────────────────────
+// Layout properties (padding, justify-content) are owned by ToolbarComponent.
+// Only theme-specific colours live here.
 .app-toolbar {
   background: var(--surface-card, #ffffff);
   border-bottom: 1px solid var(--surface-border, #e9ecef);
-  padding: 0 0.75rem 0 80px;
   height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  -webkit-app-region: drag;
   flex-shrink: 0;
-
-  .toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    -webkit-app-region: no-drag;
-  }
 }
 
 // ── Layout ────────────────────────────────────────────────────────────────

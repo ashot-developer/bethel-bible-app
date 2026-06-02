@@ -1,25 +1,25 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { Capacitor } from '@capacitor/core';
 
 import { BibleStateService } from './services/bible-state.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { BookListComponent } from './book-list/book-list.component';
 import { ChapterListComponent } from './chapter-list/chapter-list.component';
 import { VersePickerComponent } from './verse-list/verse-picker.component';
-import { VerseListComponent } from './verse-list/verse-list.component';
-import { BibleSearchComponent } from './bible-search/bible-search.component';
-import { BookmarksComponent } from './bookmarks/bookmarks.component';
 
 @Component({
   selector: 'app-bible',
   standalone: true,
-  providers: [MessageService],
   imports: [
-    FormsModule, DropdownModule, ToastModule,
+    FormsModule, DropdownModule, ToastModule, RouterOutlet,
     BookListComponent, ChapterListComponent, VersePickerComponent,
-    VerseListComponent, BibleSearchComponent, BookmarksComponent,
   ],
   template: `
 <p-toast />
@@ -35,15 +35,26 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
     </div>
   </div>
 
+  <!-- backdrop — mobile overlay only -->
+  @if (st.sidebarOpen()) {
+    <div class="sidebar-backdrop" (click)="st.closeSidebar()"></div>
+  }
+
   <!-- ══ Main ══ -->
   <div class="main">
 
     <!-- Top bar -->
     <div class="top-bar">
-      <button class="ref-btn" (click)="st.sidebarOpen() ? st.closeSidebar() : st.openSidebar()">
-        <i class="pi pi-bars"></i>
-        <span>{{ st.currentRef() }}</span>
-      </button>
+      @if (isNative && !isReadMode()) {
+        <button class="ref-btn back-icon-btn" (click)="router.navigate(['/bible'])">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+      } @else {
+        <button class="ref-btn" (click)="st.sidebarOpen() ? st.closeSidebar() : st.openSidebar()">
+          <i class="pi pi-bars"></i>
+          <span>{{ st.currentRef() }}</span>
+        </button>
+      }
       <div class="spacer"></div>
       <p-dropdown
         [options]="st.translations()"
@@ -60,29 +71,37 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
           <span class="dd-short">{{ item?.id }}</span>
         </ng-template>
       </p-dropdown>
-      <button class="icon-btn" [class.active]="st.mode() === 'search'"
+      <button class="icon-btn" [class.active]="isSearch()"
               (click)="toggleMode('search')" title="Որոնել">
         <i class="pi pi-search"></i>
       </button>
-      <button class="icon-btn bm-btn" [class.active]="st.mode() === 'bookmarks'"
+      <button class="icon-btn bm-btn" [class.active]="isBookmarks()"
               (click)="toggleMode('bookmarks')" title="Էջանիշներ">
         <i class="pi pi-bookmark"></i>
         @if (st.allBookmarks().length > 0) {
           <span class="badge">{{ st.allBookmarks().length }}</span>
         }
       </button>
+      @if (isNative) {
+        <div class="top-bar-sep"></div>
+        <button class="icon-btn" (click)="themeService.toggle()"
+                [title]="themeService.isDark() ? 'Light mode' : 'Dark mode'">
+          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+        <button class="icon-btn" (click)="router.navigate(['/settings'])" title="Կարգավորումներ">
+          <i class="pi pi-cog"></i>
+        </button>
+      }
     </div>
 
-    <!-- Content area -->
+    <!-- Content area — child routes render here -->
     <div class="content">
       @if (initError) {
         <div style="padding:1.5rem;color:red;font-size:0.85rem;white-space:pre-wrap;word-break:break-all;">
           <strong>Init error:</strong><br>{{ initError }}
         </div>
       }
-      @if (st.mode() === 'read')      { <app-verse-list /> }
-      @if (st.mode() === 'search')    { <app-bible-search /> }
-      @if (st.mode() === 'bookmarks') { <app-bookmarks /> }
+      <router-outlet />
     </div>
   </div>
 </div>
@@ -171,10 +190,11 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
       flex: 1;
       overflow: hidden;
       min-height: 0;
+      position: relative;
       background: var(--surface-ground);
     }
 
-    /* ── Sidebar ── */
+    /* ── Sidebar — desktop: push content ── */
     .sidebar {
       width: 0;
       flex-shrink: 0;
@@ -187,6 +207,32 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
     .sidebar.open {
       width: 268px;
       border-right-width: 1px;
+    }
+
+    /* ── Sidebar — mobile: overlay ── */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 268px !important;
+        border-right-width: 1px !important;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 199;
+        background: rgba(0, 0, 0, 0.38);
+        animation: backdropIn 0.2s ease;
+      }
+      @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
     }
 
     /* Swiper: 3 panels side by side at 268px each */
@@ -223,6 +269,11 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
       border-bottom: 1px solid var(--surface-border);
       background: var(--surface-card);
       flex-shrink: 0;
+    }
+
+    .back-icon-btn {
+      padding: 0.3rem 0.55rem;
+      min-width: unset;
     }
 
     .ref-btn {
@@ -298,15 +349,33 @@ import { BookmarksComponent } from './bookmarks/bookmarks.component';
     }
 
     /* ── Content ── */
-    .content { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .content {
+      flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    }
+    /* router-outlet is a zero-size element; keep it from affecting flex layout */
+    router-outlet { display: none; }
+
+    .top-bar-sep { width: 1px; height: 20px; background: var(--surface-border); margin: 0 0.1rem; flex-shrink: 0; }
   `]
 })
 export class BibleComponent implements OnInit {
-  st  = inject(BibleStateService);
-  private msg = inject(MessageService);
+  st           = inject(BibleStateService);
+  themeService = inject(ThemeService);
+  router       = inject(Router);
+  private msg  = inject(MessageService);
+  isNative     = Capacitor.isNativePlatform();
 
-  get showDialog(): boolean { return this.st.showNoteDialog(); }
-  set showDialog(v: boolean) { if (!v) this.st.cancelBookmark(); }
+  private routerUrl = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(e => (e as NavigationEnd).urlAfterRedirects),
+      startWith(this.router.url)
+    )
+  );
+
+  isSearch    = computed(() => (this.routerUrl() ?? '').startsWith('/bible/search'));
+  isBookmarks = computed(() => (this.routerUrl() ?? '').startsWith('/bible/bookmarks'));
+  isReadMode  = computed(() => !this.isSearch() && !this.isBookmarks());
 
   swiperTransform = computed(() => {
     const step = this.st.sidebarStep();
@@ -331,7 +400,8 @@ export class BibleComponent implements OnInit {
   }
 
   toggleMode(m: 'search' | 'bookmarks'): void {
-    this.st.mode.set(this.st.mode() === m ? 'read' : m);
+    const active = m === 'search' ? this.isSearch() : this.isBookmarks();
+    this.router.navigate([active ? '/bible' : `/bible/${m}`]);
   }
 
   async confirmBookmark(): Promise<void> {

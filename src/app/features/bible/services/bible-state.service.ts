@@ -1,15 +1,16 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { BibleDataService } from '../../../core/services/bible-data.service';
 import type { BibleTranslation, BibleBook, BibleVerse, Bookmark } from '../../../core/models/bible.models';
 
 type BookmarkLike = { translation: string; book_number: number; chapter: number; verse: number };
 
 export type SidebarStep = 'books' | 'chapters' | 'verses';
-export type ViewMode    = 'read' | 'search' | 'bookmarks';
 
 @Injectable({ providedIn: 'root' })
 export class BibleStateService {
-  private bible = inject(BibleDataService);
+  private bible  = inject(BibleDataService);
+  private router = inject(Router);
 
   // ── Translation ────────────────────────────────────────────────────────────
   translations        = signal<BibleTranslation[]>([]);
@@ -23,9 +24,6 @@ export class BibleStateService {
   selectedBook    = signal<BibleBook | null>(null);
   selectedChapter = signal<number | null>(null);
   selectedVerse   = signal<number | null>(null);
-
-  // ── View mode ──────────────────────────────────────────────────────────────
-  mode = signal<ViewMode>('read');
 
   // ── Search persistence ─────────────────────────────────────────────────────
   searchQuery     = signal('');
@@ -119,7 +117,7 @@ export class BibleStateService {
     this.chapters.set([]);
     this.verses.set([]);
     await Promise.all([this._loadBooks(), this.loadBookmarks()]);
-    if (this.mode() === 'read') this.openSidebar();
+    if (this.router.url === '/bible') this.openSidebar();
   }
 
   private async _loadBooks(): Promise<void> {
@@ -230,7 +228,7 @@ export class BibleStateService {
   selectVerse(verse: number): void {
     this.selectedVerse.set(verse);
     this.sidebarOpen.set(false);
-    this.mode.set('read');
+    this.router.navigate(['/bible']);
   }
 
   // ── Open bookmark in reader — switches translation if needed, no sidebar ──
@@ -249,7 +247,7 @@ export class BibleStateService {
     this.selectedChapter.set(bm.chapter);
     this.selectedVerse.set(bm.verse);
     this.verseJump.set(true);
-    this.mode.set('read');
+    this.router.navigate(['/bible']);
   }
 
   // ── Open verse from search (no sidebar) ───────────────────────────────────
@@ -264,7 +262,7 @@ export class BibleStateService {
     this.verses.set(vs);
     this.selectedVerse.set(v.verse);
     this.verseJump.set(true);
-    this.mode.set('read');
+    this.router.navigate(['/bible']);
   }
 
   // ── Bookmarks ──────────────────────────────────────────────────────────────

@@ -13,20 +13,22 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       <div class="search-bar-wrap">
         <div class="search-bar">
           <i class="pi pi-search si"></i>
-          <input #searchInput class="search-input" [(ngModel)]="query"
-                 placeholder="Որոնել Աստվածաշնչում..."
-                 (input)="onInputChange()"
-                 (keydown.enter)="doSearch(); hideSuggestions()"
-                 (keydown.arrowdown)="moveSuggestion(1)"
-                 (keydown.arrowup)="moveSuggestion(-1)"
-                 (keydown.escape)="hideSuggestions()"
-                 (focus)="onFocus()"
-                 (blur)="onBlur()" />
-          @if (query) {
-            <button class="clear-btn" (click)="clearSearch()">
-              <i class="pi pi-times"></i>
-            </button>
-          }
+          <div class="input-wrap">
+            <input #searchInput class="search-input" [(ngModel)]="query"
+                   placeholder="Որոնել Աստվածաշնչում..."
+                   (input)="onInputChange()"
+                   (keydown.enter)="doSearch(); hideSuggestions()"
+                   (keydown.arrowdown)="moveSuggestion(1)"
+                   (keydown.arrowup)="moveSuggestion(-1)"
+                   (keydown.escape)="hideSuggestions()"
+                   (focus)="onFocus()"
+                   (blur)="onBlur()" />
+            @if (query) {
+              <button class="clear-btn" (click)="clearSearch()">
+                <i class="pi pi-times"></i>
+              </button>
+            }
+          </div>
           <button class="go-btn" (click)="doSearch(); hideSuggestions()" [disabled]="searching()">Որոնել</button>
         </div>
 
@@ -152,16 +154,23 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       background: rgba(245,166,35,0.12); color: var(--bethel-primary);
     }
     .si { color: var(--text-color-secondary); font-size: 0.95rem; }
+
+    .input-wrap {
+      flex: 1; position: relative; display: flex; align-items: center; min-width: 0;
+    }
     .search-input {
-      flex: 1; border: none; outline: none; background: transparent;
+      width: 100%; border: none; outline: none; background: transparent;
       font-size: 0.97rem; color: var(--text-color); font-family: inherit;
+      padding-right: 1.6rem;
     }
     .search-input::placeholder { color: var(--text-color-secondary); }
 
     .clear-btn {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
       border: none; background: transparent; cursor: pointer;
-      color: var(--text-color-secondary); padding: 0.25rem; border-radius: 6px;
+      color: var(--text-color-secondary); padding: 0.2rem; border-radius: 6px;
       display: flex; align-items: center; font-family: inherit; transition: all 0.15s;
+      line-height: 1;
     }
     .clear-btn:hover { background: var(--surface-hover); color: var(--bethel-primary); }
 

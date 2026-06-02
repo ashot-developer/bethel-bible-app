@@ -5,7 +5,6 @@ import { filter, map, startWith } from 'rxjs';
 import { ThemeService } from '../../core/services/theme.service';
 import { UpdateService } from '../../core/services/update.service';
 import { ElectronService } from '../../core/services/electron.service';
-import { BibleStateService } from '../../features/bible/services/bible-state.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -113,7 +112,6 @@ export class ToolbarComponent {
   themeService  = inject(ThemeService);
   updateService = inject(UpdateService);
   electron      = inject(ElectronService);
-  bibleState    = inject(BibleStateService);
   private router = inject(Router);
 
   isMac = navigator.platform.toLowerCase().startsWith('mac');
@@ -131,16 +129,11 @@ export class ToolbarComponent {
   showBack = computed(() => {
     const url = this.currentUrl() ?? '';
     if (!url.startsWith('/bible')) return true;
-    return this.bibleState.mode() !== 'read';
+    return url.startsWith('/bible/');
   });
 
   goBack(): void {
-    const url = this.currentUrl() ?? '';
-    if (!url.startsWith('/bible')) {
-      this.router.navigate(['/bible']);
-    } else {
-      this.bibleState.mode.set('read');
-    }
+    this.router.navigate(['/bible']);
   }
 
   toggleSettings(): void {

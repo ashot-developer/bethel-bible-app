@@ -13,7 +13,9 @@ import { ThemeService } from './core/services/theme.service';
   imports: [RouterOutlet, ToolbarComponent],
   template: `
     <div class="app-layout">
-      <app-toolbar />
+      @if (!isNative) {
+        <app-toolbar />
+      }
       <main class="app-content">
         <router-outlet />
       </main>
@@ -45,18 +47,48 @@ export class AppComponent {
   private themeService = inject(ThemeService);
   private router = inject(Router);
   private location = inject(Location);
+  isNative = Capacitor.isNativePlatform();
   exitToast = signal(false);
   private exitToastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (!Capacitor.isNativePlatform()) return;
 
-    App.addListener('backButton', ({ canGoBack }) => {
+    // Prevent text selection in inputs on Android so Chrome's native
+    // Copy/Cut/Paste popup never appears. selectionchange fires during drag
+    // (unlike the 'select' event), so collapsing here stops the popup before
+    // it has selected text to act on. setSelectionRange(s,s) triggers another
+    // selectionchange but the s===e guard prevents recursion.
+    document.addEventListener('selectionchange', () => {
+      const el = document.activeElement as HTMLInputElement | null;
+      if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA') {
+        const s = el.selectionStart ?? 0;
+        const e = el.selectionEnd ?? 0;
+        if (s !== e) el.setSelectionRange(s, s);
+      }
+    });
+
+    App.addListener('backButton', () => {
+      // 1. Close any open PrimeNG dropdown/overlay (check visibility — PrimeNG
+      //    keeps the panel element in the DOM with display:none when closed)
+      const openPanel = Array.from(
+        document.querySelectorAll<HTMLElement>('.p-dropdown-panel, .p-overlay-panel')
+      ).find(el => window.getComputedStyle(el).display !== 'none');
+      if (openPanel) {
+        document.body.click();
+        return;
+      }
+
+      // 2. Navigate back if not on home route
+      //    /bible/search and /bible/bookmarks are child routes — location.back()
+      //    naturally goes to /bible (read mode)
       const onHome = this.router.url === '/bible' || this.router.url === '/';
       if (!onHome) {
         this.location.back();
         return;
       }
+
+      // 4. Double-press to exit
       if (this.exitToast()) {
         App.exitApp();
         return;

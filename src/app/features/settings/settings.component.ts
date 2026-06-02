@@ -1,6 +1,8 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
+import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 import { UpdateService } from '../../core/services/update.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ElectronService } from '../../core/services/electron.service';
@@ -11,6 +13,13 @@ import { ElectronService } from '../../core/services/electron.service';
   imports: [CommonModule, ButtonModule],
   template: `
 <div class="settings-root">
+  @if (isNative) {
+    <div class="mobile-nav">
+      <button class="back-btn" (click)="router.navigate(['/bible'])">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+    </div>
+  }
   <div class="settings-inner">
     <!-- App info -->
     <div class="settings-card">
@@ -172,6 +181,28 @@ import { ElectronService } from '../../core/services/electron.service';
   `,
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    .mobile-nav {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 0 0;
+      flex-shrink: 0;
+      margin-bottom: 0.75rem;
+    }
+    /* when mobile-nav is present, suppress the top padding on the scroll area */
+    .mobile-nav ~ .settings-root {
+      padding-top: 0.75rem;
+    }
+    .back-btn {
+      display: flex; align-items: center;
+      border: 1.5px solid var(--surface-border);
+      background: var(--surface-ground);
+      padding: 0.3rem 0.55rem; border-radius: 8px;
+      cursor: pointer; color: var(--text-color);
+      font-size: 0.88rem; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .back-btn:hover { border-color: var(--bethel-primary); color: var(--bethel-primary); }
 
     .settings-root {
       flex: 1;
@@ -382,6 +413,8 @@ export class SettingsComponent implements OnInit {
   updateService = inject(UpdateService);
   themeService  = inject(ThemeService);
   electron = inject(ElectronService);
+  router = inject(Router);
+  isNative = Capacitor.isNativePlatform();
 
   appVersion = signal('...');
   isMac = navigator.platform.toLowerCase().startsWith('mac');
