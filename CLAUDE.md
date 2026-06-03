@@ -2,9 +2,11 @@
 
 ## What this app is
 Bible reader for **Bethel Mrgashat** church.
-Built with **Angular 17 + Electron 29** (desktop) and **Capacitor 8** (iOS/Android). Runs entirely offline.
+Built with **Angular 17 + Electron 29** (desktop). Runs entirely offline.
 Distributed as **DMG (Mac)**, **NSIS installer (Windows)** — unsigned builds.
-Also runs as a **web app** (sql.js) and **mobile app** (Capacitor).
+Also runs as a **web app** (sql.js, `npm run build:web`).
+
+Mobile (Android/iOS) is handled by a separate KMP project — this repo has no Capacitor.
 
 ---
 
@@ -14,10 +16,8 @@ Also runs as a **web app** (sql.js) and **mobile app** (Capacitor).
 | UI framework | Angular 17, standalone components, signals |
 | UI library | PrimeNG 17 + PrimeFlex + PrimeIcons |
 | Desktop shell | Electron 29 |
-| Mobile shell | Capacitor 8 (@capacitor-community/sqlite) |
 | Database (Electron) | better-sqlite3 (SQLite, native, requires rebuild for Electron ABI) |
 | Database (Web) | sql.js (SQLite compiled to WASM) |
-| Database (Mobile) | @capacitor-community/sqlite (copyFromAssets) |
 | Packaging | electron-builder 24 |
 | Build | Angular CLI + tsc (separate tsconfig for electron) |
 | CI/CD | GitHub Actions (`.github/workflows/release.yml`) |
@@ -30,7 +30,7 @@ Also runs as a **web app** (sql.js) and **mobile app** (Capacitor).
 bethel-bible-app/
 ├── src/
 │   ├── app/
-│   │   ├── app.component.ts          # Root: app-toolbar + router-outlet
+│   │   ├── app.component.ts          # Root: app-toolbar + router-outlet (no Capacitor logic)
 │   │   ├── app.routes.ts             # /bible (default), /settings, ** → /bible
 │   │   ├── app.config.ts             # withHashLocation() — required for Electron file://
 │   │   ├── features/
@@ -50,24 +50,29 @@ bethel-bible-app/
 │   │   │   │   └── bookmarks/
 │   │   │   │       └── bookmarks.component.ts    # Saved verses list
 │   │   │   └── settings/
-│   │   │       └── settings.component.ts         # Theme, version, update check
+│   │   │       └── settings.component.ts         # Theme, version, update check (Electron only)
 │   │   ├── layout/
 │   │   │   └── toolbar/
-│   │   │       └── toolbar.component.ts  # Back button + gear + theme + logo
+│   │   │       └── toolbar.component.ts  # Back button + gear + theme + logo (always visible)
 │   │   └── core/
 │   │       ├── models/               # TypeScript interfaces (bible, member, event)
 │   │       └── services/
 │   │           ├── electron.service.ts        # Wraps window.electronAPI, isElectron flag
 │   │           ├── electron-bible.service.ts  # BibleDataService impl for Electron
 │   │           ├── web-bible.service.ts        # BibleDataService impl for Web (sql.js)
-│   │           ├── capacitor-bible.service.ts  # BibleDataService impl for Mobile
 │   │           ├── bible-data.service.ts       # Abstract base class
 │   │           ├── theme.service.ts            # Dark/light toggle, saves to SQLite
 │   │           └── update.service.ts           # Update status signal, check(), openDownload()
 │   ├── assets/
-│   │   └── databases/                # Bible SQLite files (.SQLite3 for Electron, .db for Capacitor)
+│   │   ├── databases/                # Bible SQLite files (.SQLite3, Electron only)
+│   │   └── icon-192.png              # 192px PNG favicon for web (generated from logo.png)
+│   ├── favicon.ico                   # Multi-size ICO (16/32/48/64/128px, generated from logo.png)
 │   ├── index.html                    # Has inline CSS loader (spinner) — removed after init()
 │   └── styles.scss                   # Global + dark mode overrides + p-dropdown focus fix
+│
+├── assets/
+│   ├── app-icon.icns                 # Mac app icon (electron-builder + dev window)
+│   └── app-icon.ico                  # Windows app icon (electron-builder + dev window)
 │
 ├── electron/
 │   ├── main.ts                       # BrowserWindow (titleBarStyle: hiddenInset), auto-update check
@@ -100,6 +105,12 @@ npm run build
 # Test production build locally (no packaging)
 npm run preview
 
+# Build web-only output (sql.js, baseHref: /)
+npm run build:web
+
+# Preview web build locally
+npm run preview:web
+
 # Package Mac DMG
 npm run dist:mac
 
@@ -108,19 +119,6 @@ npm run dist:win
 
 # Rebuild better-sqlite3 for Electron ABI (run after npm install on Mac arm64)
 npm run electron:rebuild
-```
-
-### Mobile (requires Node 22 terminal — Capacitor CLI requires Node >= 22)
-
-```bash
-# Build Angular for mobile + sync to native projects
-npm run build:mobile && npx cap sync android
-
-# Open in Android Studio (build/run from there)
-npx cap open android
-
-# Open in Xcode (macOS only)
-npx cap open ios
 ```
 
 ---
@@ -147,7 +145,7 @@ GitHub Actions builds `.dmg` (mac, x64+arm64) and `.exe` (win, x64) and attaches
 
 ### 1. baseHref must be "./"
 `angular.json` production config: `"baseHref": "./"`.
-Without this, paths fail over `file://` in Electron.
+Without this, paths fail over `file://` in Electron. The `web` config overrides to `"/"`.
 
 ### 2. Hash routing required
 `app.config.ts` uses `withHashLocation()` for Electron `file://` compatibility.
@@ -175,7 +173,19 @@ Toolbar is draggable (`-webkit-app-region: drag`), buttons have `no-drag`.
 
 ### 7. BibleStateService is root-level
 `providedIn: 'root'` — shared across all components including the toolbar.
-Previously was component-scoped (`providers: [BibleStateService]` in BibleComponent) — was changed to allow toolbar to read `mode()`.
+
+### 8. Electron window icon
+- **Dev**: `assets/app-icon.ico` (Windows) or `assets/app-icon.icns` (Mac)
+- **Packaged**: `undefined` — electron-builder embeds the icon into the bundle/exe
+
+### 9. Web favicon
+`src/favicon.ico` and `src/assets/icon-192.png` are generated from `src/assets/logo.png` using ImageMagick:
+```bash
+magick src/assets/logo.png \( -clone 0 -resize 16x16 \) \( -clone 0 -resize 32x32 \) \
+  \( -clone 0 -resize 48x48 \) \( -clone 0 -resize 64x64 \) \( -clone 0 -resize 128x128 \) \
+  -delete 0 src/favicon.ico
+magick src/assets/logo.png -resize 192x192 src/assets/icon-192.png
+```
 
 ---
 
@@ -261,10 +271,10 @@ Default: `WAB` (Western Armenian / Բեյրութի թարգմանություն
 | WAB | WAB.SQLite3 | Western Armenian (1994) |
 
 ### Adding a new translation
-1. Copy `.SQLite3` AND `.db` (same file, both extensions) to `src/assets/databases/`
-2. Add entry to `TRANSLATIONS` in `sqlite.service.ts`, `web-bible.service.ts`, AND `capacitor-bible.service.ts`
-3. If Armenian, add key to `ARMENIAN_IDS` Set in all three files
-4. Run `npm run build` (desktop/web) or `npm run build:mobile && npx cap sync` (mobile)
+1. Copy `.SQLite3` to `src/assets/databases/`
+2. Add entry to `TRANSLATIONS` in `sqlite.service.ts` AND `web-bible.service.ts`
+3. If Armenian, add key to `ARMENIAN_IDS` Set in both files
+4. Run `npm run build`
 
 ### Database schema required
 ```sql
@@ -277,7 +287,7 @@ verses (book_number NUMERIC, chapter NUMERIC, verse NUMERIC, text TEXT)
 ## Armenian Search Normalization
 
 Users type **modern Eastern Armenian**; old translations use **classical orthography**.
-`armenianVariants()` exists in THREE places — keep them in sync:
+`armenianVariants()` exists in TWO places — keep them in sync:
 - `electron-utils/sqlite.service.ts`
 - `src/app/core/services/web-bible.service.ts`
 - `src/app/features/bible/bible-search/bible-search.component.ts` (highlight only)
@@ -317,29 +327,6 @@ Download:
 - If no asset: opens release page (fallback)
 
 Settings page shows macOS install note (xattr command) only when `navigator.platform` starts with `'mac'`.
-
----
-
-## Mobile Architecture (Capacitor)
-
-`capacitor.config.ts`:
-- `appId: 'am.bethel.bible'`
-- `webDir: 'dist/mobile/browser'`
-- SQLite plugin: `iosDatabaseLocation: 'Library/CapacitorDatabase'`, no encryption
-
-`CapacitorBibleService` mirrors the verse cache pattern from `WebBibleService`:
-- On first `getDb()` call: `CapacitorSQLite.copyFromAssets({ overwrite: false })` copies `.db` files from `assets/databases/` to device storage
-- Then opens a named connection matching the translation ID (e.g. `'WAB'` → looks for `WAB.db`)
-- Bookmarks use `localStorage` (same as web build)
-
-**Database file extensions:**
-- Electron uses `.SQLite3` (opened by path via better-sqlite3)
-- Capacitor `copyFromAssets` only picks up `.db` files
-- Both extensions exist in `src/assets/databases/` — they are identical files
-
-**Settings/Updates on mobile:** The updates card and macOS install note in `settings.component.ts` are wrapped in `@if (electron.isElectron)` — hidden on mobile and web.
-
-**Tap highlight:** `-webkit-tap-highlight-color: transparent` is set globally in `styles.scss` to prevent the default blue flash on Android/iOS.
 
 ---
 
@@ -384,6 +371,6 @@ Tables:
 - App name: **Bethel Mrgashat Bible** (`Բեթել Մրգաշատ Աստվածաշունչ`)
 - Primary color: `#F5A623` (golden yellow) — `var(--bethel-primary)`
 - Accent color: `#D0021B` (red) — `var(--bethel-accent)`
-- Logo: `assets/logo.png`
+- Logo: `src/assets/logo.png` (512×512 PNG — source for favicon and toolbar/loader img)
 - All UI labels are in **Armenian**
 - Loader: inline CSS spinner in `index.html`, removed after `BibleStateService.init()` completes
