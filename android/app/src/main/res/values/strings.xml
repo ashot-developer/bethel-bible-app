@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Bethel Bible</string>
-    <string name="title_activity_main">Bethel Bible</string>
-    <string name="package_name">am.bethel.bible</string>
-    <string name="custom_url_scheme">am.bethel.bible</string>
-</resources>

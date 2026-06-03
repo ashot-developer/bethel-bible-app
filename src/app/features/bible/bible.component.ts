@@ -6,10 +6,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { DropdownModule } from 'primeng/dropdown';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { Capacitor } from '@capacitor/core';
 
 import { BibleStateService } from './services/bible-state.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { BookListComponent } from './book-list/book-list.component';
 import { ChapterListComponent } from './chapter-list/chapter-list.component';
 import { VersePickerComponent } from './verse-list/verse-picker.component';
@@ -45,16 +43,10 @@ import { VersePickerComponent } from './verse-list/verse-picker.component';
 
     <!-- Top bar -->
     <div class="top-bar">
-      @if (isNative && !isReadMode()) {
-        <button class="ref-btn back-icon-btn" (click)="router.navigate(['/bible'])">
-          <i class="pi pi-arrow-left"></i>
-        </button>
-      } @else {
-        <button class="ref-btn" (click)="st.sidebarOpen() ? st.closeSidebar() : st.openSidebar()">
-          <i class="pi pi-bars"></i>
-          <span>{{ st.currentRef() }}</span>
-        </button>
-      }
+      <button class="ref-btn" (click)="st.sidebarOpen() ? st.closeSidebar() : st.openSidebar()">
+        <i class="pi pi-bars"></i>
+        <span>{{ st.currentRef() }}</span>
+      </button>
       <div class="spacer"></div>
       <p-dropdown
         [options]="st.translations()"
@@ -82,16 +74,6 @@ import { VersePickerComponent } from './verse-list/verse-picker.component';
           <span class="badge">{{ st.allBookmarks().length }}</span>
         }
       </button>
-      @if (isNative) {
-        <div class="top-bar-sep"></div>
-        <button class="icon-btn" (click)="themeService.toggle()"
-                [title]="themeService.isDark() ? 'Light mode' : 'Dark mode'">
-          <i [class]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
-        </button>
-        <button class="icon-btn" (click)="router.navigate(['/settings'])" title="Կարգավորումներ">
-          <i class="pi pi-cog"></i>
-        </button>
-      }
     </div>
 
     <!-- Content area — child routes render here -->
@@ -359,11 +341,9 @@ import { VersePickerComponent } from './verse-list/verse-picker.component';
   `]
 })
 export class BibleComponent implements OnInit {
-  st           = inject(BibleStateService);
-  themeService = inject(ThemeService);
-  router       = inject(Router);
-  private msg  = inject(MessageService);
-  isNative     = Capacitor.isNativePlatform();
+  st          = inject(BibleStateService);
+  router      = inject(Router);
+  private msg = inject(MessageService);
 
   private routerUrl = toSignal(
     this.router.events.pipe(
