@@ -21,8 +21,10 @@ function createWindow(): void {
       sandbox: false,
     },
     icon: isDev
-      ? path.join(__dirname, '../../../src/assets/logo.png')
-      : path.join(process.resourcesPath, 'logo.png'),
+      ? path.join(__dirname, process.platform === 'win32'
+          ? '../../../assets/app-icon.ico'
+          : '../../../assets/app-icon.icns')
+      : undefined,
     show: false,
     backgroundColor: '#ffffff',
   });
