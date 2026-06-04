@@ -25,7 +25,9 @@ import type { BibleVerse } from '../../../core/models/bible.models';
              [class.multi-sel]="isSelected(v.verse)"
              [class.bm]="st.isBookmarked(v)"
              [attr.data-verse]="v.verse"
-             (click)="toggleSelect(v.verse)">
+             (click)="onVerseClick(v.verse)"
+             (touchstart)="onTouchStart($event)"
+             (touchend)="onTouchEnd($event, v.verse)">
           <span class="vn" [class.vn-checked]="isSelected(v.verse)">
             @if (isSelected(v.verse)) {
               <i class="pi pi-check"></i>
@@ -108,7 +110,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
-    .verse-scroll { flex: 1; overflow-y: auto; position: relative; }
+    .verse-scroll { flex: 1; overflow-y: auto; position: relative; outline: none; -webkit-overflow-scrolling: touch; }
 
     .empty {
       display: flex; flex-direction: column; align-items: center;
@@ -120,14 +122,21 @@ import type { BibleVerse } from '../../../core/models/bible.models';
 
     .verse-row {
       display: flex; gap: 0.7rem; padding: 0.65rem 1.1rem;
-      border-bottom: 1px solid var(--surface-border);
       align-items: flex-start; transition: background 0.1s; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      position: relative;
     }
+    .verse-row::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 1px; background: var(--surface-border); pointer-events: none;
+    }
+    .verse-row:active, .verse-row:focus { outline: none; box-shadow: none; }
     .verse-row:hover { background: var(--surface-hover); }
     .verse-row:hover .va { opacity: 1; }
     .verse-row.bm { background: rgba(245,166,35,0.04); }
     .verse-row.selected { background: rgba(245,166,35,0.08); }
     .verse-row.multi-sel { background: rgba(245,166,35,0.13); }
+    .verse-row.multi-sel::after { background: rgba(245,166,35,0.2); }
     .verse-row.multi-sel:hover { background: rgba(245,166,35,0.18); }
     .verse-row.multi-sel .va { opacity: 1; }
 
@@ -135,6 +144,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       width: 20px; min-width: 20px; height: 20px; font-size: 0.7rem; font-weight: 700;
       color: var(--bethel-primary); flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: manipulation;
     }
     .vn.vn-checked {
       background: var(--bethel-primary); color: #fff;
@@ -144,12 +154,13 @@ import type { BibleVerse } from '../../../core/models/bible.models';
     .vn.vn-checked i { font-size: 12px; }
     .vt { flex: 1; line-height: 1.78; font-size: 0.97rem; color: var(--text-color); }
     .va { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
-    @media (max-width: 576px) { .va { opacity: 1; } }
+    @media (max-width: 576px), (hover: none) { .va { opacity: 1; } }
 
     .av {
       border: none; background: transparent; padding: 0.28rem; border-radius: 6px;
       cursor: pointer; color: var(--text-color-secondary);
       display: flex; align-items: center; font-size: 0.82rem; transition: all 0.15s; font-family: inherit;
+      touch-action: manipulation;
     }
     .av:hover { background: var(--surface-hover); color: var(--bethel-primary); }
 
@@ -270,6 +281,26 @@ export class VerseListComponent {
 
   private selectedVerses = signal<Set<number>>(new Set());
   selectionCount = computed(() => this.selectedVerses().size);
+
+  private touchStartY = 0;
+  private lastTouchHandled = 0;
+
+  onTouchStart(event: TouchEvent): void {
+    this.touchStartY = event.touches[0].clientY;
+  }
+
+  onTouchEnd(event: TouchEvent, verse: number): void {
+    if ((event.target as HTMLElement).closest('.av')) return;
+    const delta = Math.abs(event.changedTouches[0].clientY - this.touchStartY);
+    if (delta > 15) return;
+    this.lastTouchHandled = Date.now();
+    this.toggleSelect(verse);
+  }
+
+  onVerseClick(verse: number): void {
+    if (Date.now() - this.lastTouchHandled < 600) return;
+    this.toggleSelect(verse);
+  }
 
   compareOpen    = signal(false);
   compareLoading = signal(false);

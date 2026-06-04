@@ -20,7 +20,7 @@ import { VersePickerComponent } from './verse-list/verse-picker.component';
     BookListComponent, ChapterListComponent, VersePickerComponent,
   ],
   template: `
-<p-toast />
+<p-toast position="top-center" />
 
 <div class="bible-layout">
 
