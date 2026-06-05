@@ -81,8 +81,11 @@ jobs:
       - name: Build MSIX for Microsoft Store
         run: npm run build && npx electron-builder --win appx --publish never
 
-      - name: Upload MSIX to release
+      - name: Upload Store package to release
         shell: bash
-        run: gh release upload ${{ github.event.release.tag_name }} release/*.msix --clobber
+        run: |
+          FILE=$(find release -maxdepth 2 \( -name "*.msix" -o -name "*.appx" \) | head -1)
+          echo "Found store package: $FILE"
+          gh release upload ${{ github.event.release.tag_name }} "$FILE" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
