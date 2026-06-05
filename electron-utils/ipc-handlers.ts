@@ -59,7 +59,10 @@ async function fetchLatestRelease(): Promise<UpdateStatus> {
   }
 }
 
+const isWindowsStore = (process as NodeJS.Process & { windowsStore?: boolean }).windowsStore === true;
+
 export async function performAutoUpdateCheck(win: BrowserWindow): Promise<void> {
+  if (isWindowsStore) return;
   cachedUpdateStatus = { state: 'checking', currentVersion: app.getVersion() };
   win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
   cachedUpdateStatus = await fetchLatestRelease();
@@ -67,7 +70,7 @@ export async function performAutoUpdateCheck(win: BrowserWindow): Promise<void> 
 }
 
 export function setupAutoUpdater(win: BrowserWindow): void {
-  if (process.platform !== 'win32') return;
+  if (process.platform !== 'win32' || isWindowsStore) return;
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
@@ -131,6 +134,7 @@ export function registerIpcHandlers(): void {
   // ── App ────────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.APP.GET_VERSION, () => app.getVersion());
   ipcMain.handle(IPC_CHANNELS.APP.OPEN_EXTERNAL, (_, url: string) => shell.openExternal(url));
+  ipcMain.handle(IPC_CHANNELS.APP.IS_STORE, () => isWindowsStore);
 
   // ── Theme ──────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.THEME.GET, () => db.getSetting('theme') ?? 'light');

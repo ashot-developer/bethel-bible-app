@@ -70,6 +70,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invoke(IPC_CHANNELS.APP.GET_VERSION),
     openExternal: (url: string): Promise<void> =>
       invoke(IPC_CHANNELS.APP.OPEN_EXTERNAL, url),
+    isStore: (): Promise<boolean> =>
+      invoke(IPC_CHANNELS.APP.IS_STORE),
   },
 
   theme: {

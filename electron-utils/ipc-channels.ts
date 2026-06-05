@@ -32,6 +32,7 @@ export const IPC_CHANNELS = {
     GET_VERSION: 'app:getVersion',
     CHECK_UPDATE: 'app:checkUpdate',
     OPEN_EXTERNAL: 'app:openExternal',
+    IS_STORE: 'app:isStore',
   },
   THEME: {
     SET: 'theme:set',

@@ -110,13 +110,36 @@ export class BibleStateService {
 
   // ── Translation change ─────────────────────────────────────────────────────
   async setTranslation(id: string): Promise<void> {
+    const prevBook    = this.selectedBook();
+    const prevChapter = this.selectedChapter();
+
     this.selectedTranslation.set(id);
     this.selectedBook.set(null);
     this.selectedChapter.set(null);
     this.selectedVerse.set(null);
     this.chapters.set([]);
     this.verses.set([]);
+
     await Promise.all([this._loadBooks(), this.loadBookmarks()]);
+
+    // Restore position if the user was reading a specific book/chapter
+    if (prevBook && prevChapter) {
+      const book = this.books().find(b => b.book_number === prevBook.book_number);
+      if (book) {
+        this.selectedBook.set(book);
+        const chs = await this.bible.getChapters(id, book.book_number);
+        this.chapters.set(chs);
+        const ch = chs.includes(prevChapter) ? prevChapter : chs[0];
+        if (ch) {
+          const vs = await this.bible.getVerses(id, book.book_number, ch);
+          this.verses.set(vs);
+          this.selectedChapter.set(ch);
+          this._savePosition();
+          return;
+        }
+      }
+    }
+
     if (this.router.url === '/bible') this.openSidebar();
   }
 
@@ -330,6 +353,22 @@ export class BibleStateService {
     if (bm.id) await this._doRemoveBookmark(bm.id);
   }
 
+  async bookmarkVersesDirect(verses: BibleVerse[]): Promise<void> {
+    const toAdd = verses.filter(v =>
+      !this.bookmarkedSet().has(this.bmKey(this.selectedTranslation(), v.book_number, v.chapter, v.verse))
+    );
+    await Promise.all(toAdd.map(v => this.bible.addBookmark({
+      translation: this.selectedTranslation(),
+      book_number: v.book_number,
+      chapter: v.chapter,
+      verse: v.verse,
+      text: v.text,
+      book_name: v.book_name ?? this.selectedBook()?.long_name ?? '',
+      note: '',
+    })));
+    if (toAdd.length) await this.loadBookmarks();
+  }
+
   async search(query: string): Promise<BibleVerse[]> {
     return this.bible.search(this.selectedTranslation(), query);
   }
@@ -347,6 +386,23 @@ export class BibleStateService {
           const verses = await this.bible.getVerses(t.id, bookNumber, chapter);
           const found  = verses.find(v => v.verse === verse);
           return { translation: t, text: found?.text ?? '' };
+        } catch { return { translation: t, text: '' }; }
+      })
+    );
+    return results.filter(r => r.text.length > 0);
+  }
+
+  async getVersesRangeAcrossTranslations(
+    bookNumber: number, chapter: number, verseNumbers: number[]
+  ): Promise<{ translation: BibleTranslation; text: string }[]> {
+    const results = await Promise.all(
+      this.translations().map(async t => {
+        try {
+          const all = await this.bible.getVerses(t.id, bookNumber, chapter);
+          const matched = all
+            .filter(v => verseNumbers.includes(v.verse))
+            .sort((a, b) => a.verse - b.verse);
+          return { translation: t, text: matched.map(v => `${v.verse} ${v.text}`).join('\n') };
         } catch { return { translation: t, text: '' }; }
       })
     );

@@ -66,8 +66,24 @@ import { ElectronService } from '../../core/services/electron.service';
       </div>
     </div>
 
-    <!-- Updates — Electron only -->
-    @if (electron.isElectron) {
+    <!-- Microsoft Store — updates managed by Store -->
+    @if (electron.isElectron && electron.isWindowsStore()) {
+      <div class="settings-card">
+        <div class="card-header">
+          <i class="pi pi-refresh"></i>
+          Թարմացումներ
+        </div>
+        <div class="info-row">
+          <span class="info-label">Թարմացումների կառավարում</span>
+          <span class="info-value store-badge">
+            <i class="pi pi-microsoft"></i> Microsoft Store
+          </span>
+        </div>
+      </div>
+    }
+
+    <!-- Updates — direct install only -->
+    @if (electron.isElectron && !electron.isWindowsStore()) {
       <div class="settings-card">
         <div class="card-header">
           <i class="pi pi-refresh"></i>
@@ -258,6 +274,13 @@ import { ElectronService } from '../../core/services/electron.service';
       border-radius: 20px;
       font-size: 0.82rem;
       font-weight: 700;
+    }
+
+    .store-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: rgba(0,120,212,0.1); color: #0078d4;
+      padding: 0.15rem 0.55rem; border-radius: 20px;
+      font-size: 0.82rem; font-weight: 700;
     }
 
     /* Theme row */

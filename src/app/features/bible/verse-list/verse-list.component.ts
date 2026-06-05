@@ -25,7 +25,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
              [class.multi-sel]="isSelected(v.verse)"
              [class.bm]="st.isBookmarked(v)"
              [attr.data-verse]="v.verse"
-             (click)="onVerseClick(v.verse)"
+             (click)="onVerseClick($event, v.verse)"
              (touchstart)="onTouchStart($event)"
              (touchend)="onTouchEnd($event, v.verse)">
           <span class="vn" [class.vn-checked]="isSelected(v.verse)">
@@ -36,19 +36,21 @@ import type { BibleVerse } from '../../../core/models/bible.models';
             }
           </span>
           <span class="vt">{{ v.text }}</span>
-          <div class="va">
-            <button class="av" (click)="$event.stopPropagation(); st.toggleBookmark(v)"
-                    [title]="st.isBookmarked(v) ? 'Հեռացնել' : 'Էջանիշ'">
-              <i [class]="st.isBookmarked(v) ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
-                 [style.color]="st.isBookmarked(v) ? 'var(--bethel-primary)' : ''"></i>
-            </button>
-            <button class="av" (click)="$event.stopPropagation(); openCompare(v)" title="Բոլոր թարգմանությունները">
-              <i class="pi pi-language"></i>
-            </button>
-            <button class="av" (click)="$event.stopPropagation(); copy(v)" title="Պատճենել">
-              <i class="pi pi-copy"></i>
-            </button>
-          </div>
+          @if (selectionCount() === 0) {
+            <div class="va">
+              <button class="av" (click)="$event.stopPropagation(); st.toggleBookmark(v)"
+                      [title]="st.isBookmarked(v) ? 'Հեռացնել' : 'Էջանիշ'">
+                <i [class]="st.isBookmarked(v) ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
+                   [style.color]="st.isBookmarked(v) ? 'var(--bethel-primary)' : ''"></i>
+              </button>
+              <button class="av" (click)="$event.stopPropagation(); openCompare(v)" title="Բոլոր թարգմանությունները">
+                <i class="pi pi-language"></i>
+              </button>
+              <button class="av" (click)="$event.stopPropagation(); copy(v)" title="Պատճենել">
+                <i class="pi pi-copy"></i>
+              </button>
+            </div>
+          }
         </div>
       }
     </div>
@@ -82,6 +84,12 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       <div class="sel-bar">
         <span class="sel-count">{{ selectionCount() }} հատված</span>
         <div class="sel-actions">
+          <button class="sel-btn" (click)="bookmarkSelected()" title="Էջանիշ">
+            <i class="pi pi-bookmark"></i>
+          </button>
+          <button class="sel-btn" (click)="compareSelected()" title="Բոլոր թարգ.">
+            <i class="pi pi-language"></i>
+          </button>
           <button class="sel-btn primary" (click)="copySelected()">
             <i class="pi pi-copy"></i> Պատճենել
           </button>
@@ -125,6 +133,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       align-items: flex-start; transition: background 0.1s; cursor: pointer;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent;
       position: relative;
+      user-select: none; -webkit-user-select: none;
     }
     .verse-row::after {
       content: ''; position: absolute; bottom: 0; left: 0; right: 0;
@@ -270,7 +279,7 @@ import type { BibleVerse } from '../../../core/models/bible.models';
       text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.3rem;
     }
     .cmp-item.cmp-current .cmp-tname::after { content: ' ✓'; }
-    .cmp-text { font-size: 0.95rem; line-height: 1.7; color: var(--text-color); }
+    .cmp-text { font-size: 0.95rem; line-height: 1.7; color: var(--text-color); white-space: pre-wrap; }
   `]
 })
 export class VerseListComponent {
@@ -282,6 +291,7 @@ export class VerseListComponent {
   private selectedVerses = signal<Set<number>>(new Set());
   selectionCount = computed(() => this.selectedVerses().size);
 
+  private lastAnchorVerse: number | null = null;
   private touchStartY = 0;
   private lastTouchHandled = 0;
 
@@ -295,11 +305,29 @@ export class VerseListComponent {
     if (delta > 15) return;
     this.lastTouchHandled = Date.now();
     this.toggleSelect(verse);
+    this.lastAnchorVerse = verse;
   }
 
-  onVerseClick(verse: number): void {
+  onVerseClick(event: MouseEvent, verse: number): void {
     if (Date.now() - this.lastTouchHandled < 600) return;
-    this.toggleSelect(verse);
+    if (event.shiftKey && this.lastAnchorVerse !== null) {
+      event.preventDefault(); // prevent browser text selection on shift+click
+      this.selectRange(this.lastAnchorVerse, verse);
+    } else {
+      this.toggleSelect(verse);
+      this.lastAnchorVerse = verse;
+    }
+  }
+
+  private selectRange(from: number, to: number): void {
+    const verseNums = this.st.verses().map(v => v.verse);
+    const fromIdx = verseNums.indexOf(from);
+    const toIdx   = verseNums.indexOf(to);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+    const s = new Set(this.selectedVerses());
+    for (let i = lo; i <= hi; i++) s.add(verseNums[i]);
+    this.selectedVerses.set(s);
   }
 
   compareOpen    = signal(false);
@@ -322,6 +350,7 @@ export class VerseListComponent {
     effect(() => {
       this.st.selectedChapter();
       this.selectedVerses.set(new Set());
+      this.lastAnchorVerse = null;
       setTimeout(() => {
         const el = this.scrollEl?.nativeElement;
         if (el) el.scrollTop = 0;
@@ -341,6 +370,39 @@ export class VerseListComponent {
 
   clearSelection(): void {
     this.selectedVerses.set(new Set());
+    this.lastAnchorVerse = null;
+  }
+
+  async bookmarkSelected(): Promise<void> {
+    const sel = this.selectedVerses();
+    const verses = this.st.verses()
+      .filter(v => sel.has(v.verse))
+      .sort((a, b) => a.verse - b.verse);
+    await this.st.bookmarkVersesDirect(verses);
+    this.msg.add({ severity: 'success', summary: `${verses.length} հատված պահպանված`, life: 2000 });
+    this.clearSelection();
+  }
+
+  async compareSelected(): Promise<void> {
+    const sel = this.selectedVerses();
+    const verses = this.st.verses()
+      .filter(v => sel.has(v.verse))
+      .sort((a, b) => a.verse - b.verse);
+    if (!verses.length) return;
+
+    const book = verses[0].book_name ?? this.st.selectedBook()?.long_name ?? '';
+    const ch   = this.st.selectedChapter();
+    this.compareRef.set(`${book} ${ch}:${this.formatVerseNums(verses.map(v => v.verse))}`);
+    this.compareResults.set([]);
+    this.compareLoading.set(true);
+    this.compareOpen.set(true);
+
+    const results = verses.length === 1
+      ? await this.st.getVerseAcrossTranslations(verses[0].book_number, verses[0].chapter, verses[0].verse)
+      : await this.st.getVersesRangeAcrossTranslations(verses[0].book_number, verses[0].chapter, verses.map(v => v.verse));
+
+    this.compareResults.set(results);
+    this.compareLoading.set(false);
   }
 
   private formatVerseNums(nums: number[]): string {

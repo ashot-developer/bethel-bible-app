@@ -23,7 +23,9 @@ import type { BibleVerse } from '../../../core/models/bible.models';
                    (keydown.escape)="hideSuggestions()"
                    (focus)="onFocus()"
                    (blur)="onBlur()" />
-            @if (query) {
+            @if (suggestLoading()) {
+              <span class="input-spinner"><i class="pi pi-spin pi-spinner"></i></span>
+            } @else if (query) {
               <button class="clear-btn" (click)="clearSearch()">
                 <i class="pi pi-times"></i>
               </button>
@@ -174,6 +176,12 @@ import type { BibleVerse } from '../../../core/models/bible.models';
     }
     .clear-btn:hover { background: var(--surface-hover); color: var(--bethel-primary); }
 
+    .input-spinner {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      padding: 0.2rem; display: flex; align-items: center; line-height: 1;
+      color: var(--text-color-secondary); font-size: 0.82rem; pointer-events: none;
+    }
+
     .go-btn {
       border: 1.5px solid var(--bethel-primary); background: var(--bethel-primary);
       color: #fff; border-radius: 8px; padding: 0.35rem 0.9rem; cursor: pointer;
@@ -272,6 +280,7 @@ export class BibleSearchComponent implements OnInit {
 
   query            = '';
   searching        = signal(false);
+  suggestLoading   = signal(false);
   suggestions      = signal<{ word: string; count: number }[]>([]);
   showSuggestions  = signal(false);
   activeSuggestion = signal(-1);
@@ -301,6 +310,7 @@ export class BibleSearchComponent implements OnInit {
     if (this.suggestTimer) clearTimeout(this.suggestTimer);
     if (!this.query.trim()) { this.clearSearch(); return; }
     this.activeSuggestion.set(-1);
+    this.suggestLoading.set(true);
     this.suggestTimer  = setTimeout(() => this.loadSuggestions(), 200);
     this.debounceTimer = setTimeout(() => this.doSearch(), 400);
   }
@@ -337,12 +347,17 @@ export class BibleSearchComponent implements OnInit {
   }
 
   private async loadSuggestions(): Promise<void> {
-    if (this.query.trim().length < 2) { this.suggestions.set([]); return; }
+    if (this.query.trim().length < 2) {
+      this.suggestions.set([]);
+      this.suggestLoading.set(false);
+      return;
+    }
     const gen = ++this.suggestGen;
     const s = await this.st.suggest(this.query.trim());
     if (gen !== this.suggestGen) return; // stale response — a newer call is in flight
     this.suggestions.set(s);
     this.showSuggestions.set(s.length > 0);
+    this.suggestLoading.set(false);
   }
 
   clearSearch(): void {
@@ -354,6 +369,7 @@ export class BibleSearchComponent implements OnInit {
     this.st.searchResults.set([]);
     this.suggestions.set([]);
     this.showSuggestions.set(false);
+    this.suggestLoading.set(false);
   }
 
   async doSearch(): Promise<void> {

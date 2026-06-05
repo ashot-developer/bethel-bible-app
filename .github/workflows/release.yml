@@ -49,3 +49,40 @@ jobs:
         run: npm run build && npx electron-builder ${{ matrix.args }} --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-store-msix:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set version from release tag
+        shell: node {0}
+        run: |
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = '${{ github.event.release.tag_name }}'.replace(/^v/, '');
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          console.log('Version set to:', pkg.version);
+
+      - name: Build MSIX for Microsoft Store
+        run: npm run build && npx electron-builder --win appx --publish never
+
+      - name: Upload MSIX to release
+        shell: bash
+        run: gh release upload ${{ github.event.release.tag_name }} release/*.msix --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

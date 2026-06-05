@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import type { BibleBook, BibleTranslation, BibleVerse, Bookmark } from '../models/bible.models';
 import type { Member } from '../models/member.models';
 import type { ChurchEvent } from '../models/event.models';
@@ -46,6 +46,7 @@ interface ElectronAPI {
   app: {
     getVersion(): Promise<string>;
     openExternal(url: string): Promise<void>;
+    isStore(): Promise<boolean>;
   };
   theme: {
     get(): Promise<string>;
@@ -65,9 +66,13 @@ interface ElectronAPI {
 @Injectable({ providedIn: 'root' })
 export class ElectronService {
   private api: ElectronAPI | null = null;
+  isWindowsStore = signal(false);
 
   constructor() {
     this.api = (window as unknown as { electronAPI: ElectronAPI }).electronAPI ?? null;
+    if (this.api) {
+      this.api.app.isStore().then(v => this.isWindowsStore.set(v));
+    }
   }
 
   get isElectron(): boolean {

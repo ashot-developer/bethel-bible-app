@@ -374,3 +374,44 @@ Tables:
 - Logo: `src/assets/logo.png` (512×512 PNG — source for favicon and toolbar/loader img)
 - All UI labels are in **Armenian**
 - Loader: inline CSS spinner in `index.html`, removed after `BibleStateService.init()` completes
+
+---
+
+## Web / iOS Safari Specifics
+
+The web build (`npm run build:web`) is deployed at **`bible.bethel.am`** and must work on iOS Safari.
+
+### Viewport
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+```
+- `viewport-fit=cover` enables safe-area support on notched iPhones
+- Layout uses `height: 100dvh` (dynamic viewport height) so the content isn't clipped by Safari's collapsible address bar
+- Safe area insets applied via `padding: env(safe-area-inset-*)` in `styles.scss`
+
+### Touch handling on verse rows
+iOS fires both `touchend` AND `click`, which caused double-selection. The pattern used in `verse-list.component.ts`:
+```ts
+(touchstart)="onTouchStart($event)"
+(touchend)="onTouchEnd($event, v.verse)"
+(click)="onVerseClick(v.verse)"
+
+onTouchStart(e)  → records touchStartY
+onTouchEnd(e, v) → if Y-delta < 15px (not a scroll), calls toggleSelect(); sets lastTouchHandled = Date.now()
+onVerseClick(v)  → skipped if Date.now() - lastTouchHandled < 600ms (deduplicates the trailing click)
+```
+**Do not simplify this back to a plain `(click)` — it will double-fire on iOS.**
+
+### Touch CSS rules
+- `touch-action: manipulation` on interactive rows/buttons — removes 300ms tap delay
+- `-webkit-tap-highlight-color: transparent` globally — removes blue tap flash
+- `-webkit-overflow-scrolling: touch` on `.verse-scroll` — enables momentum scroll
+- `@media (hover: none)` guard on hover styles — prevents hover states sticking on touch devices
+
+### Toast
+- Position: `top-center` (not default bottom-right — better on mobile)
+- On small screens: `width: calc(100vw - 2rem)`, `left: 1rem`, `transform: none`
+
+### SEO / Social
+`src/index.html` has Open Graph + Twitter card meta tags pointing to `https://bible.bethel.am/`.
+`src/assets/og-image.png` is the social share preview image.
