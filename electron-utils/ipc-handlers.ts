@@ -46,10 +46,12 @@ async function fetchLatestRelease(): Promise<UpdateStatus> {
     };
     const latestVersion = data.tag_name.replace(/^v/, '');
     if (compareVersions(latestVersion, currentVersion) > 0) {
+      const downloadUrl = pickAssetUrl(data.assets ?? []);
+      if (!downloadUrl) return { state: 'not-available', currentVersion, latestVersion };
       return {
         state: 'available', currentVersion, latestVersion,
         releaseUrl: data.html_url,
-        downloadUrl: pickAssetUrl(data.assets ?? []),
+        downloadUrl,
         releaseNotes: data.body ?? '',
       };
     }
