@@ -3,12 +3,18 @@ name: Release
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to upload to (e.g. v1.0.1)'
+        required: true
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: github.event_name == 'release'
     strategy:
       fail-fast: false
       matrix:
@@ -69,12 +75,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Set version from release tag
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using tag: $TAG"
+
+      - name: Set version from tag
         shell: node {0}
         run: |
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.version = '${{ github.event.release.tag_name }}'.replace(/^v/, '');
+          pkg.version = '${{ steps.tag.outputs.tag }}'.replace(/^v/, '');
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           console.log('Version set to:', pkg.version);
 
@@ -86,6 +100,6 @@ jobs:
         run: |
           FILE=$(find release -maxdepth 2 \( -name "*.msix" -o -name "*.appx" \) | head -1)
           echo "Found store package: $FILE"
-          gh release upload ${{ github.event.release.tag_name }} "$FILE" --clobber
+          gh release upload ${{ steps.tag.outputs.tag }} "$FILE" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
