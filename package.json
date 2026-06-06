@@ -1,6 +1,6 @@
 {
   "name": "bethel-church",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bethel Mrgashat Bible Desktop Application",
   "main": "dist/electron/electron/main.js",
   "scripts": {
@@ -16,11 +16,12 @@
     "dist": "npm run build && electron-builder",
     "build:web": "ng build --configuration web",
     "preview:web": "npm run build:web && npx serve dist/web/browser",
-    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:mac": "npm run build && electron-builder --mac --arm64",
+    "dist:mac:x64": "npm run build && electron-rebuild -f -w better-sqlite3 --arch x64 && electron-builder --mac --x64 && electron-rebuild -f -w better-sqlite3",
     "dist:win": "npm run build && electron-builder --win",
     "dist:win:store": "npm run build && electron-builder --win appx",
     "postinstall": "electron-builder install-app-deps",
-    "electron:rebuild": "electron-rebuild -f -w better-sqlite3 --arch arm64"
+    "electron:rebuild": "electron-rebuild -f -w better-sqlite3"
   },
   "keywords": [],
   "author": "Bethel Church",
