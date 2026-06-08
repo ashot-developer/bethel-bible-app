@@ -107,14 +107,27 @@ jobs:
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           console.log('Version set to:', pkg.version);
 
-      - name: Build MSIX for Microsoft Store
-        run: npm run build && npx electron-builder --win appx --publish never
+      - name: Build Angular + Electron
+        run: npm run build
 
-      - name: Upload Store package to release
+      - name: Rebuild better-sqlite3 for x64
+        run: npx electron-rebuild -f -w better-sqlite3 --arch x64
+
+      - name: Build MSIX for x64
+        run: npx electron-builder --win appx --x64 --config.npmRebuild=false --publish never
+
+      - name: Rebuild better-sqlite3 for arm64
+        run: npx electron-rebuild -f -w better-sqlite3 --arch arm64
+
+      - name: Build MSIX for arm64
+        run: npx electron-builder --win appx --arm64 --config.npmRebuild=false --publish never
+
+      - name: Upload Store packages to release
         shell: bash
         run: |
-          FILE=$(find release -maxdepth 2 \( -name "*.msix" -o -name "*.appx" \) | head -1)
-          echo "Found store package: $FILE"
-          gh release upload ${{ steps.tag.outputs.tag }} "$FILE" --clobber
+          find release -maxdepth 2 \( -name "*.msix" -o -name "*.appx" \) | while read FILE; do
+            echo "Uploading: $FILE"
+            gh release upload ${{ steps.tag.outputs.tag }} "$FILE" --clobber
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
