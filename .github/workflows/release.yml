@@ -24,7 +24,7 @@ jobs:
           - os: macos-latest
             args: --mac --x64 --config.npmRebuild=false
             sqlite_arch: x64
-          - os: windows-latest
+          - os: windows-2022
             args: --win
 
     runs-on: ${{ matrix.os }}
@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-store-msix:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - uses: actions/checkout@v4.2.2
