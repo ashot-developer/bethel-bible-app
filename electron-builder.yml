@@ -58,7 +58,7 @@ appx:
   publisher: CN=838942BA-A57F-4D52-811D-9DDF61FD1487
   publisherDisplayName: Bethel Mrgashat IT Team
   applicationId: BethelMrgashatBible
-  backgroundColor: "transparent"
+  backgroundColor: "#F0E4CE"
 
 publish:
   provider: github
