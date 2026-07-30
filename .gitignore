@@ -12,4 +12,7 @@ out/
 *.dmg
 *.exe
 *.AppImage
-*.blockmap
+*.blockmaprelease-dev/
+release/
+dist/
+out/
