@@ -27,6 +27,7 @@
   <key>com.apple.security.application-groups</key>
   <array>
     <string>group.8L8W5W4548.com.bethelchurch.bible</string>
+    <string>8L8W5W4548.*</string>
   </array>
 
   <!-- App Store Identifiers -->

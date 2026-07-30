@@ -1,6 +1,6 @@
 {
   "name": "bethel-church",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Bethel Mrgashat Bible Desktop Application",
   "main": "dist/electron/electron/main.js",
   "scripts": {
