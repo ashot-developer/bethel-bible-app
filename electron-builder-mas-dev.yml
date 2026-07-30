@@ -1,0 +1,41 @@
+appId: com.bethelchurch.bible
+productName: Bethel Bible Desktop
+executableName: Bethel Bible Desktop
+copyright: Copyright © 2026 Bethel Mrgashat
+
+directories:
+  output: release-dev
+  buildResources: assets
+
+extraMetadata:
+  main: dist/electron/electron/main.js
+
+files:
+  - dist/electron/**/*
+  - dist/renderer/browser/**/*
+  - node_modules/**/*
+  - package.json
+
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
+
+extraResources:
+  - from: src/assets/databases
+    to: databases
+    filter:
+      - "**/*.SQLite3"
+
+mac:
+  category: public.app-category.reference
+  icon: assets/app-icon.icns
+  minimumSystemVersion: "12.0"
+  bundleVersion: "1.0.11"
+  target:
+    - target: mas-dev
+      arch: arm64
+
+mas:
+  entitlements: assets/entitlements.mas.plist
+  entitlementsInherit: assets/entitlements.mas.inherit.plist
+  provisioningProfile: assets/Bethel_Bible_MAS_Dev_Explicit.provisionprofile
+  type: development

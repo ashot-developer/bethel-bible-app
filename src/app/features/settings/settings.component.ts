@@ -82,8 +82,24 @@ import { ElectronService } from '../../core/services/electron.service';
       </div>
     }
 
+    <!-- Mac App Store — updates managed by Store -->
+    @if (electron.isElectron && electron.isMacStore()) {
+      <div class="settings-card">
+        <div class="card-header">
+          <i class="pi pi-refresh"></i>
+          Թարմացումներ
+        </div>
+        <div class="info-row">
+          <span class="info-label">Թարմացումների կառավարում</span>
+          <span class="info-value store-badge apple-store-badge">
+            <i class="pi pi-apple"></i> Mac App Store
+          </span>
+        </div>
+      </div>
+    }
+
     <!-- Updates — direct install only -->
-    @if (electron.isElectron && !electron.isWindowsStore()) {
+    @if (electron.isElectron && !electron.isWindowsStore() && !electron.isMacStore()) {
       <div class="settings-card">
         <div class="card-header">
           <i class="pi pi-refresh"></i>
@@ -281,6 +297,12 @@ import { ElectronService } from '../../core/services/electron.service';
       background: rgba(0,120,212,0.1); color: #0078d4;
       padding: 0.15rem 0.55rem; border-radius: 20px;
       font-size: 0.82rem; font-weight: 700;
+    }
+    .apple-store-badge {
+      background: rgba(0,0,0,0.07); color: var(--text-color);
+    }
+    :host-context(.dark) .apple-store-badge {
+      background: rgba(255,255,255,0.1);
     }
 
     /* Theme row */

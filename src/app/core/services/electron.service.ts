@@ -47,6 +47,7 @@ interface ElectronAPI {
     getVersion(): Promise<string>;
     openExternal(url: string): Promise<void>;
     isStore(): Promise<boolean>;
+    isMacStore(): Promise<boolean>;
   };
   theme: {
     get(): Promise<string>;
@@ -67,11 +68,13 @@ interface ElectronAPI {
 export class ElectronService {
   private api: ElectronAPI | null = null;
   isWindowsStore = signal(false);
+  isMacStore = signal(false);
 
   constructor() {
     this.api = (window as unknown as { electronAPI: ElectronAPI }).electronAPI ?? null;
     if (this.api) {
       this.api.app.isStore().then(v => this.isWindowsStore.set(v));
+      this.api.app.isMacStore().then(v => this.isMacStore.set(v));
     }
   }
 

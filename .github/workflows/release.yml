@@ -131,3 +131,83 @@ jobs:
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-store-mas:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using tag: $TAG"
+
+      - name: Set version from tag
+        shell: node {0}
+        run: |
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = '${{ steps.tag.outputs.tag }}'.replace(/^v/, '');
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          console.log('Version set to:', pkg.version);
+
+      - name: Rebuild better-sqlite3 for arm64
+        run: npx electron-rebuild -f -w better-sqlite3 --arch arm64
+        env:
+          npm_config_arch: arm64
+
+      - name: Copy arm64 native module
+        run: cp node_modules/better-sqlite3/build/Release/better_sqlite3.node /tmp/better_sqlite3_arm64.node
+
+      - name: Rebuild better-sqlite3 for x64
+        run: npx electron-rebuild -f -w better-sqlite3 --arch x64
+        env:
+          npm_config_arch: x64
+
+      - name: Copy x64 native module
+        run: cp node_modules/better-sqlite3/build/Release/better_sqlite3.node /tmp/better_sqlite3_x64.node
+
+      - name: Create universal better-sqlite3
+        run: |
+          lipo -create -output node_modules/better-sqlite3/build/Release/better_sqlite3.node \
+            /tmp/better_sqlite3_arm64.node \
+            /tmp/better_sqlite3_x64.node
+
+      - name: Build Angular + Electron
+        run: npm run build
+
+      - name: Build universal MAS package
+        run: npx electron-builder --config electron-builder-mas.yml --mac --universal --config.npmRebuild=false --publish never
+        env:
+          CSC_LINK: ${{ secrets.MAC_CERTS_P12 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload MAS package to release
+        shell: bash
+        run: |
+          find release-mas -maxdepth 2 -name "*.pkg" | while read FILE; do
+            echo "Uploading: $FILE"
+            gh release upload ${{ steps.tag.outputs.tag }} "$FILE" --clobber
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

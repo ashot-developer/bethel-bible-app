@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- App Sandbox -->
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+
+  <!-- Network (required even for offline apps - Electron checks network config on startup) -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <!-- File Access (for reading Bible database files) -->
+  <key>com.apple.security.files.user-selected.read-only</key>
+  <true/>
+
+  <!-- Required for Electron/Chromium -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+
+  <!-- Required for Chromium MachPortRendezvousServer on macOS 26 under MAS sandbox -->
+  <!-- Value must be <TEAM_ID>.<bundle_id>, NOT group.-prefixed -->
+  <key>com.apple.security.application-groups</key>
+  <array>
+    <string>group.8L8W5W4548.com.bethelchurch.bible</string>
+  </array>
+
+  <!-- App Store Identifiers -->
+  <key>com.apple.developer.team-identifier</key>
+  <string>8L8W5W4548</string>
+</dict>
+</plist>

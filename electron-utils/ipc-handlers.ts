@@ -62,9 +62,10 @@ async function fetchLatestRelease(): Promise<UpdateStatus> {
 }
 
 const isWindowsStore = (process as NodeJS.Process & { windowsStore?: boolean }).windowsStore === true;
+const isMacStore = (process as NodeJS.Process & { mas?: boolean }).mas === true;
 
 export async function performAutoUpdateCheck(win: BrowserWindow): Promise<void> {
-  if (isWindowsStore) return;
+  if (isWindowsStore || isMacStore) return;
   cachedUpdateStatus = { state: 'checking', currentVersion: app.getVersion() };
   win.webContents.send(IPC_CHANNELS.UPDATE.STATUS, cachedUpdateStatus);
   cachedUpdateStatus = await fetchLatestRelease();
@@ -137,6 +138,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.APP.GET_VERSION, () => app.getVersion());
   ipcMain.handle(IPC_CHANNELS.APP.OPEN_EXTERNAL, (_, url: string) => shell.openExternal(url));
   ipcMain.handle(IPC_CHANNELS.APP.IS_STORE, () => isWindowsStore);
+  ipcMain.handle(IPC_CHANNELS.APP.IS_MAC_STORE, () => isMacStore);
 
   // ── Theme ──────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.THEME.GET, () => db.getSetting('theme') ?? 'light');

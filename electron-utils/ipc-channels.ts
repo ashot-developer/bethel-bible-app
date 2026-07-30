@@ -33,6 +33,7 @@ export const IPC_CHANNELS = {
     CHECK_UPDATE: 'app:checkUpdate',
     OPEN_EXTERNAL: 'app:openExternal',
     IS_STORE: 'app:isStore',
+    IS_MAC_STORE: 'app:isMacStore',
   },
   THEME: {
     SET: 'theme:set',
