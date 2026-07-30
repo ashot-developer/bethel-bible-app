@@ -30,6 +30,8 @@
   </array>
 
   <!-- App Store Identifiers -->
+  <key>com.apple.application-identifier</key>
+  <string>8L8W5W4548.com.bethelchurch.bible</string>
   <key>com.apple.developer.team-identifier</key>
   <string>8L8W5W4548</string>
 </dict>
